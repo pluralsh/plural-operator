@@ -1,0 +1,7 @@
+apiVersion: platform.plural.sh/v1alpha1
+kind: SlashCommand
+metadata:
+  name: slashcommand-sample
+spec:
+  # Add fields here
+  foo: bar

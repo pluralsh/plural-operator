@@ -1,0 +1,44 @@
+domain: plural.sh
+layout:
+- go.kubebuilder.io/v3
+multigroup: true
+projectName: plural-operator
+repo: github.com/pluralsh/plural-operator
+resources:
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: plural.sh
+  group: platform
+  kind: Dashboard
+  path: github.com/pluralsh/plural-operator/api/platform/v1alpha1
+  version: v1alpha1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: plural.sh
+  group: platform
+  kind: LogFilter
+  path: github.com/pluralsh/plural-operator/api/platform/v1alpha1
+  version: v1alpha1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: plural.sh
+  group: platform
+  kind: Proxy
+  path: github.com/pluralsh/plural-operator/api/platform/v1alpha1
+  version: v1alpha1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: plural.sh
+  group: platform
+  kind: SlashCommand
+  path: github.com/pluralsh/plural-operator/api/platform/v1alpha1
+  version: v1alpha1
+version: "3"

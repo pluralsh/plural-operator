@@ -1,0 +1,7 @@
+apiVersion: platform.plural.sh/v1alpha1
+kind: LogFilter
+metadata:
+  name: logfilter-sample
+spec:
+  # Add fields here
+  foo: bar
