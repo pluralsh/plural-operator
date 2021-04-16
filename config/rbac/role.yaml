@@ -1,0 +1,112 @@
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  creationTimestamp: null
+  name: manager-role
+rules:
+- apiGroups:
+  - platform.plural.sh
+  resources:
+  - dashboards
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - platform.plural.sh
+  resources:
+  - dashboards/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - platform.plural.sh
+  resources:
+  - dashboards/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - platform.plural.sh
+  resources:
+  - logfilters
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - platform.plural.sh
+  resources:
+  - logfilters/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - platform.plural.sh
+  resources:
+  - logfilters/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - platform.plural.sh
+  resources:
+  - proxies
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - platform.plural.sh
+  resources:
+  - proxies/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - platform.plural.sh
+  resources:
+  - proxies/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - platform.plural.sh
+  resources:
+  - slashcommands
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - platform.plural.sh
+  resources:
+  - slashcommands/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - platform.plural.sh
+  resources:
+  - slashcommands/status
+  verbs:
+  - get
+  - patch
+  - update

@@ -68,8 +68,6 @@ type DbConfig struct {
 
 // ProxySpec defines the desired state of Proxy
 type ProxySpec struct {
-	// Name for this proxy
-	Name string `json:"name"`
 	// Description for this proxy spec
 	// +optional
 	Description string `json:"description,omitempty"`
@@ -79,7 +77,7 @@ type ProxySpec struct {
 	Target string `json:"target"`
 	// credentials to use when authenticating against a proxied resource
 	// +optional
-	Credentials string `json:"credentials"`
+	Credentials *Credentials `json:"credentials"`
 
 	// db-specific configuration for this proxy
 	// +optional

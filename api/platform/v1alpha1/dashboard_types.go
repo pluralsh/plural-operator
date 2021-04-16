@@ -62,9 +62,11 @@ type GraphQuery struct {
 	Query string `json:"query"`
 
 	// The format for the legend
+	// +optional
 	LegendFormat string `json:"legendFormat"`
 
 	// The legend name for this query
+	// +optional
 	Legend string `json:"legend"`
 }
 
