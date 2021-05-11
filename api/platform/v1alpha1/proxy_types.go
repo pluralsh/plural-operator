@@ -40,11 +40,15 @@ const (
 // Credentials for authenticating against a proxied resource
 type Credentials struct {
 	// username to auth with
+	// +optional
 	User string `json:"user"`
 	// secret storing auth info
 	Secret string `json:"secret"`
 	// key in the secret to use
 	Key string `json:"key"`
+	// key in the secret that stores the username
+	// +optional
+	UserKey string `json:"userKey"`
 }
 
 // additional configuration for shell proxies
@@ -64,6 +68,14 @@ type DbConfig struct {
 	Engine EngineType `json:"engine"`
 	// port to use
 	Port int32 `json:"port"`
+}
+
+type WebConfig struct {
+	// port of the service to forward
+	Port int32 `json:"port"`
+	// path to direct users to on sign-in
+	// +optional
+	Path string `json:"path"`
 }
 
 // ProxySpec defines the desired state of Proxy
@@ -86,6 +98,10 @@ type ProxySpec struct {
 	// sh-specific configuration for this proxy
 	// +optional
 	ShConfig *ShConfig `json:"shConfig,omitempty"`
+
+	// web-specific configuration for this proxy
+	// +optional
+	WebConfig *WebConfig `json:"webConfig,omitempty"`
 }
 
 // ProxyStatus defines the observed state of Proxy
