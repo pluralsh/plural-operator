@@ -36,20 +36,24 @@ spec:
           spec:
             description: LogTailSpec defines the desired state of LogTail
             properties:
+              container:
+                description: The specific container to tail
+                type: string
               follow:
                 description: whether to interactively follow the logs
                 type: boolean
-              foo:
-                description: the kubectl-type target to use for this log tail, eg
-                  deployment/name-of-my-deployment
-                type: string
               limit:
                 description: number of lines to tail
                 format: int32
                 type: integer
+              target:
+                description: the kubectl-type target to use for this log tail, eg
+                  deployment/name-of-my-deployment
+                type: string
             required:
             - follow
             - limit
+            - target
             type: object
           status:
             description: LogTailStatus defines the observed state of LogTail

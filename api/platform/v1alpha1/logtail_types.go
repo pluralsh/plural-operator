@@ -25,15 +25,15 @@ import (
 
 // LogTailSpec defines the desired state of LogTail
 type LogTailSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
-
 	// the kubectl-type target to use for this log tail, eg deployment/name-of-my-deployment
-	Target string `json:"foo,omitempty"`
+	Target string `json:"target"`
 	// whether to interactively follow the logs
 	Follow bool `json:"follow"`
 	// number of lines to tail
 	Limit int32 `json:"limit"`
+	// The specific container to tail
+	// +optional
+	Container string `json:"container,omitempty"`
 }
 
 // LogTailStatus defines the observed state of LogTail
