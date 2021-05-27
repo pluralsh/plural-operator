@@ -56,6 +56,8 @@ func (f *sharedInformerFactory) ForResource(resource schema.GroupVersionResource
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Platform().V1alpha1().Dashboards().Informer()}, nil
 	case v1alpha1.SchemeGroupVersion.WithResource("logfilters"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Platform().V1alpha1().LogFilters().Informer()}, nil
+	case v1alpha1.SchemeGroupVersion.WithResource("logtails"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.Platform().V1alpha1().LogTails().Informer()}, nil
 	case v1alpha1.SchemeGroupVersion.WithResource("proxies"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Platform().V1alpha1().Proxies().Informer()}, nil
 	case v1alpha1.SchemeGroupVersion.WithResource("slashcommands"):

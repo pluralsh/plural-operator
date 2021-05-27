@@ -29,12 +29,12 @@ type ProxyType string
 type EngineType string
 
 const (
-	Db ProxyType = "db"
-	Sh ProxyType = "sh"
+	Db  ProxyType = "db"
+	Sh  ProxyType = "sh"
 	Web ProxyType = "web"
 
 	Postgres EngineType = "postgres"
-	Mysql EngineType = "mysql"
+	Mysql    EngineType = "mysql"
 )
 
 // Credentials for authenticating against a proxied resource

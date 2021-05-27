@@ -33,6 +33,14 @@ type LogFilterListerExpansion interface{}
 // LogFilterNamespaceLister.
 type LogFilterNamespaceListerExpansion interface{}
 
+// LogTailListerExpansion allows custom methods to be added to
+// LogTailLister.
+type LogTailListerExpansion interface{}
+
+// LogTailNamespaceListerExpansion allows custom methods to be added to
+// LogTailNamespaceLister.
+type LogTailNamespaceListerExpansion interface{}
+
 // ProxyListerExpansion allows custom methods to be added to
 // ProxyLister.
 type ProxyListerExpansion interface{}

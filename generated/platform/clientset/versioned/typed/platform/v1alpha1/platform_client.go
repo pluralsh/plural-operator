@@ -27,6 +27,7 @@ type PlatformV1alpha1Interface interface {
 	RESTClient() rest.Interface
 	DashboardsGetter
 	LogFiltersGetter
+	LogTailsGetter
 	ProxiesGetter
 	SlashCommandsGetter
 }
@@ -42,6 +43,10 @@ func (c *PlatformV1alpha1Client) Dashboards(namespace string) DashboardInterface
 
 func (c *PlatformV1alpha1Client) LogFilters(namespace string) LogFilterInterface {
 	return newLogFilters(c, namespace)
+}
+
+func (c *PlatformV1alpha1Client) LogTails(namespace string) LogTailInterface {
+	return newLogTails(c, namespace)
 }
 
 func (c *PlatformV1alpha1Client) Proxies(namespace string) ProxyInterface {

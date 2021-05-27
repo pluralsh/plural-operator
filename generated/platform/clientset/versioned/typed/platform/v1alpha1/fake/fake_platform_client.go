@@ -35,6 +35,10 @@ func (c *FakePlatformV1alpha1) LogFilters(namespace string) v1alpha1.LogFilterIn
 	return &FakeLogFilters{c, namespace}
 }
 
+func (c *FakePlatformV1alpha1) LogTails(namespace string) v1alpha1.LogTailInterface {
+	return &FakeLogTails{c, namespace}
+}
+
 func (c *FakePlatformV1alpha1) Proxies(namespace string) v1alpha1.ProxyInterface {
 	return &FakeProxies{c, namespace}
 }

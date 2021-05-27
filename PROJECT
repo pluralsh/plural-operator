@@ -41,4 +41,13 @@ resources:
   kind: SlashCommand
   path: github.com/pluralsh/plural-operator/api/platform/v1alpha1
   version: v1alpha1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: false
+  domain: plural.sh
+  group: platform
+  kind: LogTail
+  path: github.com/pluralsh/plural-operator/api/platform/v1alpha1
+  version: v1alpha1
 version: "3"

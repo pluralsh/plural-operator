@@ -27,6 +27,8 @@ type Interface interface {
 	Dashboards() DashboardInformer
 	// LogFilters returns a LogFilterInformer.
 	LogFilters() LogFilterInformer
+	// LogTails returns a LogTailInformer.
+	LogTails() LogTailInformer
 	// Proxies returns a ProxyInformer.
 	Proxies() ProxyInformer
 	// SlashCommands returns a SlashCommandInformer.
@@ -52,6 +54,11 @@ func (v *version) Dashboards() DashboardInformer {
 // LogFilters returns a LogFilterInformer.
 func (v *version) LogFilters() LogFilterInformer {
 	return &logFilterInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
+}
+
+// LogTails returns a LogTailInformer.
+func (v *version) LogTails() LogTailInformer {
+	return &logTailInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }
 
 // Proxies returns a ProxyInformer.

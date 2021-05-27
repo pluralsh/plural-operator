@@ -21,6 +21,8 @@ type DashboardExpansion interface{}
 
 type LogFilterExpansion interface{}
 
+type LogTailExpansion interface{}
+
 type ProxyExpansion interface{}
 
 type SlashCommandExpansion interface{}

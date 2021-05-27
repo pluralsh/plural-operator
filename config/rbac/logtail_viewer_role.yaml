@@ -1,0 +1,20 @@
+# permissions for end users to view logtails.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: logtail-viewer-role
+rules:
+- apiGroups:
+  - platform.plural.sh
+  resources:
+  - logtails
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - platform.plural.sh
+  resources:
+  - logtails/status
+  verbs:
+  - get
