@@ -24,9 +24,12 @@ import (
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+	"sigs.k8s.io/controller-runtime/pkg/source"
 
 	platformv1alpha1 "github.com/pluralsh/plural-operator/api/platform/v1alpha1"
 )
@@ -61,7 +64,7 @@ var (
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.7.2/pkg/reconcile
 func (r *SecretSyncReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	log = r.Log.WithValues("secretsync", req.NamespacedName)
+	log := r.Log.WithValues("secretsync", req.NamespacedName)
 
 	// your logic here
 	var sync platformv1alpha1.SecretSync
@@ -71,7 +74,7 @@ func (r *SecretSyncReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 	}
 
 	var secret corev1.Secret
-	namespacedName := &client.NamespacedName{
+	namespacedName := types.NamespacedName{
 		Namespace: sync.Spec.Namespace,
 		Name:      sync.Spec.Name,
 	}
@@ -81,15 +84,15 @@ func (r *SecretSyncReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 	}
 
 	meta := secret.ObjectMeta
-	if _, ok := secret.Annotations[allowedAnnotation]; !ok {
-		log.Info("Secret is not labeled as syncable: ", meta.Namespace, "/", meta.Name)
-		return ctrl.Result{}, nil
-	}
+	// if _, ok := secret.Annotations[allowedAnnotation]; !ok {
+	// 	log.Info("Secret is not labeled as syncable: ", meta.Namespace, "/", meta.Name)
+	// 	return ctrl.Result{}, nil
+	// }
 
 	oldNs := meta.Namespace
 
 	secret.ObjectMeta.Namespace = sync.ObjectMeta.Namespace
-	if err := r.Patch(ctx, secret, client.Apply, client.ForceOwnership, client.FieldOwner("plural-operator")); err != nil {
+	if err := r.Patch(ctx, &secret, client.Apply, client.ForceOwnership, client.FieldOwner("plural-operator")); err != nil {
 		log.Error(err, "failed to sync object to namespace", sync.ObjectMeta.Namespace)
 		return ctrl.Result{}, err
 	}
@@ -97,7 +100,7 @@ func (r *SecretSyncReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 	secret.Labels[ownedLabel] = "true"
 	secret.Annotations[ownerAnnotation] = fmt.Sprintf("%s/%s", req.NamespacedName.Namespace, req.NamespacedName.Name)
 	secret.ObjectMeta.Namespace = oldNs
-	if err := r.Update(ctx, secret); err != nil {
+	if err := r.Update(ctx, &secret); err != nil {
 		log.Error(err, "Failed to add ownership labels to secret: ", secret.ObjectMeta.Namespace, "/", secret.ObjectMeta.Name)
 		return ctrl.Result{}, err
 	}
@@ -109,9 +112,8 @@ func (r *SecretSyncReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 func (r *SecretSyncReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&platformv1alpha1.SecretSync{}).
-		Owns(&corev1.Secret{}).
-		Watches(&corev1.Secret{}, &handler.EnqueueRequestsFromMapFunc(func(a client.Object) []reconcile.Request {
-			secret := a.(*corev1.Secret)
+		Watches(&source.Kind{Type: &corev1.Secret{}}, handler.EnqueueRequestsFromMapFunc(func(obj client.Object) []reconcile.Request {
+			secret := obj.(*corev1.Secret)
 			if val, ok := secret.Labels[ownedLabel]; !ok || val != "true" {
 				return []reconcile.Request{}
 			}

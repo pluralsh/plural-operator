@@ -28,9 +28,10 @@ type SecretSyncSpec struct {
 	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
 
-	// Foo is an example field of SecretSync. Edit secretsync_types.go to remove/update
+	// The secrets name that you intend to sync into the current namespace
 	Name      string `json:"name,omitempty"`
-	Namespace string `json:"name,omitempty"`
+	// the namespace for the synced secrets
+	Namespace string `json:"namespace,omitempty"`
 }
 
 // SecretSyncStatus defines the observed state of SecretSync
