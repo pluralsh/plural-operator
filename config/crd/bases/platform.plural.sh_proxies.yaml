@@ -91,6 +91,10 @@ spec:
                   command:
                     description: command to execute in the proxied pod
                     type: string
+                  container:
+                    description: The container name to shell into (if the pod has
+                      multiple containers configured)
+                    type: string
                 required:
                 - command
                 type: object

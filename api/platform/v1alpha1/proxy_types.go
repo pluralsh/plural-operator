@@ -58,6 +58,10 @@ type ShConfig struct {
 	// arguments to pass to the command
 	// +optional
 	Args []string `json:"args,omitempty"`
+
+	// The container name to shell into (if the pod has multiple containers configured)
+	// +optional
+	Container string `json:"container"`
 }
 
 // additional configuration for database proxies
