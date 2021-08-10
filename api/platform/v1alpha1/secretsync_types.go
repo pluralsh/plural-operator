@@ -29,7 +29,7 @@ type SecretSyncSpec struct {
 	// Important: Run "make" to regenerate code after modifying this file
 
 	// The secrets name that you intend to sync into the current namespace
-	Name      string `json:"name,omitempty"`
+	Name string `json:"name,omitempty"`
 	// the namespace for the synced secrets
 	Namespace string `json:"namespace,omitempty"`
 }

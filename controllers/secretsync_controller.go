@@ -23,6 +23,7 @@ import (
 
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -44,7 +45,7 @@ type SecretSyncReconciler struct {
 var (
 	secretOwnerKey    = ".metadata.controller"
 	apiGVStr          = platformv1alpha1.GroupVersion.String()
-	ownedLabel        = "platform.plural.sh/owned"
+	ownedAnnotation   = "platform.plural.sh/owned"
 	ownerAnnotation   = "platform.plural.sh/owner"
 	allowedAnnotation = "platform.plural.sh/syncable"
 )
@@ -83,25 +84,38 @@ func (r *SecretSyncReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 		return ctrl.Result{}, err
 	}
 
-	meta := secret.ObjectMeta
 	// if _, ok := secret.Annotations[allowedAnnotation]; !ok {
 	// 	log.Info("Secret is not labeled as syncable: ", meta.Namespace, "/", meta.Name)
 	// 	return ctrl.Result{}, nil
 	// }
 
-	oldNs := meta.Namespace
-
-	secret.ObjectMeta.Namespace = sync.ObjectMeta.Namespace
-	if err := r.Patch(ctx, &secret, client.Apply, client.ForceOwnership, client.FieldOwner("plural-operator")); err != nil {
-		log.Error(err, "failed to sync object to namespace", sync.ObjectMeta.Namespace)
+	meta := secret.ObjectMeta
+	log.Info(fmt.Sprintf("Attempting to apply secret %s/%s", req.NamespacedName.Namespace, meta.Name))
+	annotations := secret.Annotations
+	delete(annotations, ownerAnnotation)
+	delete(annotations, ownedAnnotation)
+	newSecret := &unstructured.Unstructured{
+		Object: map[string]interface{}{
+			"apiVersion": "v1",
+			"kind":       "Secret",
+			"metadata": map[string]interface{}{
+				"name":        meta.Name,
+				"namespace":   req.NamespacedName.Namespace,
+				"labels":      secret.Labels,
+				"annotations": annotations,
+			},
+			"data": secret.Data,
+		},
+	}
+	if err := r.Patch(ctx, newSecret, client.Apply, client.ForceOwnership, client.FieldOwner("plural-operator")); err != nil {
+		log.Error(err, fmt.Sprintf("failed to sync object to namespace %s", sync.ObjectMeta.Namespace))
 		return ctrl.Result{}, err
 	}
 
-	secret.Labels[ownedLabel] = "true"
+	secret.Annotations[ownedAnnotation] = "true"
 	secret.Annotations[ownerAnnotation] = fmt.Sprintf("%s/%s", req.NamespacedName.Namespace, req.NamespacedName.Name)
-	secret.ObjectMeta.Namespace = oldNs
 	if err := r.Update(ctx, &secret); err != nil {
-		log.Error(err, "Failed to add ownership labels to secret: ", secret.ObjectMeta.Namespace, "/", secret.ObjectMeta.Name)
+		log.Error(err, fmt.Sprintf("Failed to add ownership labels to secret: %s/%s", secret.ObjectMeta.Namespace, secret.ObjectMeta.Name))
 		return ctrl.Result{}, err
 	}
 
@@ -114,7 +128,7 @@ func (r *SecretSyncReconciler) SetupWithManager(mgr ctrl.Manager) error {
 		For(&platformv1alpha1.SecretSync{}).
 		Watches(&source.Kind{Type: &corev1.Secret{}}, handler.EnqueueRequestsFromMapFunc(func(obj client.Object) []reconcile.Request {
 			secret := obj.(*corev1.Secret)
-			if val, ok := secret.Labels[ownedLabel]; !ok || val != "true" {
+			if val, ok := secret.Annotations[ownedAnnotation]; !ok || val != "true" {
 				return []reconcile.Request{}
 			}
 
