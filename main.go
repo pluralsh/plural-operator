@@ -92,7 +92,16 @@ func main() {
 		Log:    ctrl.Log.WithName("controllers").WithName("ServiceAccount"),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "SecretSync")
+		setupLog.Error(err, "unable to create controller", "controller", "ServiceAccount")
+		os.Exit(1)
+	}
+
+	if err = (&controllers.JobReconciler{
+		Client: mgr.GetClient(),
+		Log:    ctrl.Log.WithName("controllers").WithName("Job"),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "Job")
 		os.Exit(1)
 	}
 
