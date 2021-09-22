@@ -1,0 +1,7 @@
+apiVersion: platform.plural.sh/v1alpha1
+kind: Runbook
+metadata:
+  name: runbook-sample
+spec:
+  # Add fields here
+  foo: bar
