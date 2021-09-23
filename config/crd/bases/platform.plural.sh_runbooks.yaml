@@ -51,6 +51,12 @@ spec:
                     configuration:
                       description: The details of a configuration action
                       properties:
+                        statefulSets:
+                          description: stateful sets to clean before rebuilding (for
+                            pvc resizes)
+                          items:
+                            type: string
+                          type: array
                         updates:
                           description: The updates you want to perform
                           items:
@@ -113,9 +119,22 @@ spec:
                     prometheus:
                       description: a prometheus query spec
                       properties:
+                        format:
+                          description: the format for the value returned
+                          enum:
+                          - cpu
+                          - memory
+                          - none
+                          type: string
+                        legend:
+                          description: the legend to use in the graph of this metric
+                          type: string
                         query:
+                          description: the prometheus query
                           type: string
                       required:
+                      - format
+                      - legend
                       - query
                       type: object
                     type:
@@ -123,6 +142,7 @@ spec:
                       enum:
                       - prometheus
                       - kubernetes
+                      - nodes
                       type: string
                   required:
                   - name

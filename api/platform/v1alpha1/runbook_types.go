@@ -21,7 +21,7 @@ import (
 )
 
 // the type for this datasource
-// +kubebuilder:validation:Enum=prometheus;kubernetes
+// +kubebuilder:validation:Enum=prometheus;kubernetes;nodes
 type DatasourceType string
 
 // the type for this runbook action
@@ -32,19 +32,35 @@ type ActionType string
 // +kubebuilder:validation:Enum=deployment;statefulset
 type ResourceType string
 
+// the format for a prometheus datasource value
+// +kubebuilder:validation:Enum=cpu;memory;none
+type FormatType string
+
 const (
 	PrometheusDatasourceType DatasourceType = "prometheus"
 	KubernetesDatasourceType DatasourceType = "kubernetes"
+	NodesDatasourceType DatasourceType = "nodes"
 
 	ConfigurationActionType ActionType = "config"
 
 	DeploymentResourceType  ResourceType = "deployment"
 	StatefulsetResourceType ResourceType = "statefulset"
+
+	CPUFormatType    FormatType = "cpu"
+	MemoryFormatType FormatType = "memory"
+	NoFormatType     FormatType = "none"
 )
 
 // PrometheusDatasource represents a query to prometheus to be used as a runbook datasource
 type PrometheusDatasource struct {
+	// the prometheus query
 	Query string `json:"query"`
+
+	// the format for the value returned
+	Format FormatType `json:"format"`
+
+	// the legend to use in the graph of this metric
+	Legend string `json:"legend"`
 }
 
 // KubernetesDatasource represents a query to the kubernetes api. It only supports individual resources
@@ -69,13 +85,17 @@ type PathUpdate struct {
 type ConfigurationAction struct {
 	// The updates you want to perform
 	Updates []*PathUpdate `json:"updates"`
+
+	// stateful sets to clean before rebuilding (for pvc resizes)
+	// +optional
+	StatefulSets []string `json:"statefulSets"`
 }
 
 // RunbookAction represents an action to be performed in a runbook
 type RunbookAction struct {
 	// The name to reference this action
 	Name string `json:"name"`
-	
+
 	// The type of this action, eg config or kubernetes
 	Action ActionType `json:"action"`
 
