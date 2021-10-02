@@ -122,6 +122,17 @@ func main() {
 		os.Exit(1)
 	}
 
+	amr := &alertmanager.AlertmanagerReconciler{
+		Client: mgr.GetClient(),
+		Log:    ctrl.Log.WithName("controllers").WithName("Alertmanager"),
+		Scheme: mgr.GetScheme(),
+	}
+
+	if err := amr.SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "alertmanager")
+		os.Exit(1)
+	}
+
 	//+kubebuilder:scaffold:builder
 
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
@@ -133,12 +144,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	amr := &alertmanager.AlertmanagerReconciler{
-		Client: mgr.GetClient(),
-		Log:    ctrl.Log.WithName("controllers").WithName("Alertmanager"),
-		Scheme: mgr.GetScheme(),
-	}
-
+	// add webhook handler for alertmanager
 	ctx := ctrl.SetupSignalHandler()
 	if err := mgr.AddMetricsExtraHandler("/webhook", alertmanager.AlertmanagerHandler(ctx, amr)); err != nil {
 		setupLog.Error(err, "unable to set up alertmanager webhook")
