@@ -34,6 +34,36 @@ func (amr *AlertmanagerReconciler) Reconcile(ctx context.Context, payload *Webho
 		return err
 	}
 
+	for _, runbook := range runbooks.Items {
+		alerts := runbook.Status.Alerts
+		hasMatch := false
+		for _, alert := range payload.Alerts {
+			if !matchesRunbook(alert, &runbook) {
+				continue
+			}
+			hasMatch = true
+			name, _ := alert.Labels[nameLabel]
+			if alert.Status == ResolvedStatus {
+				alerts = removeAlert(alerts, name)
+			} else {
+				alerts = append(alerts, &platformv1alpha1.RunbookAlertStatus{
+					Name:        name,
+					StartsAt:    alert.StartsAt,
+					Annotations: alert.Annotations,
+					Labels:      alert.Labels,
+					Fingerprint: alert.Fingerprint,
+				})
+			}
+		}
+
+		if hasMatch {
+			runbook.Status.Alerts = alerts
+			if err := amr.Status().Update(ctx, &runbook); err != nil {
+				return err
+			}
+		}
+	}
+
 	return nil
 }
 
