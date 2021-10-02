@@ -14,3 +14,13 @@ func removeAlert(alerts []*platformv1alpha1.RunbookAlertStatus, name string) []*
 
 	return result
 }
+
+func hasAlert(alerts []*platformv1alpha1.RunbookAlertStatus, name string) bool {
+	for _, alert := range alerts {
+		if alert.Name == name {
+			return true
+		}
+	}
+
+	return false
+}

@@ -66,7 +66,7 @@ func (r *NamespaceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 
 	pluralAlerts := resources.AlertManagerConfig(
 		"plural",
-		"http://plural-operator.bootstrap:3000/webhook",
+		"http://plural-operator.bootstrap:8080/webhook",
 		map[string]string{},
 	)
 

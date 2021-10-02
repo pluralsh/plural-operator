@@ -45,7 +45,7 @@ func (amr *AlertmanagerReconciler) Reconcile(ctx context.Context, payload *Webho
 			name, _ := alert.Labels[nameLabel]
 			if alert.Status == ResolvedStatus {
 				alerts = removeAlert(alerts, name)
-			} else {
+			} else if !hasAlert(alerts, name) {
 				alerts = append(alerts, &platformv1alpha1.RunbookAlertStatus{
 					Name:        name,
 					StartsAt:    alert.StartsAt,
@@ -67,16 +67,13 @@ func (amr *AlertmanagerReconciler) Reconcile(ctx context.Context, payload *Webho
 	return nil
 }
 
-func SetupAlertmanager(ctx context.Context, addr string, amr *AlertmanagerReconciler) error {
-	server := http.NewServeMux()
-
-	server.HandleFunc(route, func(w http.ResponseWriter, r *http.Request) {
+func AlertmanagerHandler(ctx context.Context, amr *AlertmanagerReconciler) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
 		log := amr.Log.WithValues("Alertmanager", "handler")
 		payload, err := ioutil.ReadAll(r.Body)
 		if err != nil {
 			log.Error(err, "failed to read alertmanager webhook")
 		}
-		fmt.Println(payload)
 
 		webhookPayload := WebhookPayload{}
 		err = json.Unmarshal([]byte(payload), &webhookPayload)
@@ -87,9 +84,5 @@ func SetupAlertmanager(ctx context.Context, addr string, amr *AlertmanagerReconc
 		if err := amr.Reconcile(ctx, &webhookPayload); err != nil {
 			log.Error(err, "failed to reconcile alertmanager webhook")
 		}
-	})
-
-	fmt.Printf("Starting alertmanager webhook on %s\n", addr)
-
-	return http.ListenAndServe(addr, server)
+	}
 }

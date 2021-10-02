@@ -133,21 +133,21 @@ func main() {
 		os.Exit(1)
 	}
 
-	setupLog.Info("starting manager")
-	ctx := ctrl.SetupSignalHandler()
-	if err := mgr.Start(ctx); err != nil {
-		setupLog.Error(err, "problem running manager")
-		os.Exit(1)
-	}
-
 	amr := &alertmanager.AlertmanagerReconciler{
 		Client: mgr.GetClient(),
 		Log:    ctrl.Log.WithName("controllers").WithName("Alertmanager"),
 		Scheme: mgr.GetScheme(),
 	}
 
-	if err := alertmanager.SetupAlertmanager(ctx, webhookAddr, amr); err != nil {
-		setupLog.Error(err, "could not setup alertmanager webhook")
+	ctx := ctrl.SetupSignalHandler()
+	if err := mgr.AddMetricsExtraHandler("/webhook", alertmanager.AlertmanagerHandler(ctx, amr)); err != nil {
+		setupLog.Error(err, "unable to set up alertmanager webhook")
+		os.Exit(1)
+	}
+
+	setupLog.Info("starting manager")
+	if err := mgr.Start(ctx); err != nil {
+		setupLog.Error(err, "problem running manager")
 		os.Exit(1)
 	}
 }
