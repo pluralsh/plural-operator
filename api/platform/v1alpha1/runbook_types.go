@@ -39,7 +39,7 @@ type FormatType string
 const (
 	PrometheusDatasourceType DatasourceType = "prometheus"
 	KubernetesDatasourceType DatasourceType = "kubernetes"
-	NodesDatasourceType DatasourceType = "nodes"
+	NodesDatasourceType      DatasourceType = "nodes"
 
 	ConfigurationActionType ActionType = "config"
 
@@ -125,6 +125,30 @@ type RunbookDatasource struct {
 	Kubernetes *KubernetesDatasource `json:"kubernetes,omitempty"`
 }
 
+// RunbookAlert represents an alert to join to this runbook
+type RunbookAlert struct {
+	// the name of the alert
+	Name string `json:"name"`
+}
+
+// RunbookAlertStatus represents the status of an alert joined to a runbook
+type RunbookAlertStatus struct {
+	// the name of the alert
+	Name string `json:"name"`
+
+	// the time it fired
+	StartsAt string `json:"startsAt"`
+
+	// the alert annotations
+	Annotations map[string]string `json:"annotations"`
+
+	// the alert labels
+	Labels map[string]string `json:"labels"`
+
+	// the fingerprint of this alert
+	Fingerprint string `json:"fingerprint"`
+}
+
 // RunbookSpec defines the desired state of Runbook
 type RunbookSpec struct {
 	// The name for the runbook displayed in the plural console
@@ -141,12 +165,17 @@ type RunbookSpec struct {
 
 	// the display in supported xml for the runbook in the console UI
 	Display string `json:"display"`
+
+	// alerts to tie to this runbook
+	// +optional
+	Alerts []*RunbookAlert `json:"alerts"`
 }
 
 // RunbookStatus defines the observed state of Runbook
 type RunbookStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
 	// Important: Run "make" to regenerate code after modifying this file
+	Alerts []*RunbookAlertStatus `json:"alerts"`
 }
 
 //+kubebuilder:object:root=true

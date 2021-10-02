@@ -31,8 +31,11 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
+	"github.com/pluralsh/plural-operator/alertmanager"
 	platformv1alpha1 "github.com/pluralsh/plural-operator/api/platform/v1alpha1"
 	"github.com/pluralsh/plural-operator/controllers"
+
+	amv1alpha1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1alpha1"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -45,6 +48,8 @@ func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 
 	utilruntime.Must(platformv1alpha1.AddToScheme(scheme))
+
+	utilruntime.Must(amv1alpha1.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 
@@ -52,8 +57,11 @@ func main() {
 	var metricsAddr string
 	var enableLeaderElection bool
 	var probeAddr string
+	var webhookAddr string
+
 	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
 	flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
+	flag.StringVar(&webhookAddr, "webhook-bind-address", ":3000", "The address the webhook endpoint binds to.")
 	flag.BoolVar(&enableLeaderElection, "leader-elect", false,
 		"Enable leader election for controller manager. "+
 			"Enabling this will ensure there is only one active controller manager.")
@@ -105,6 +113,15 @@ func main() {
 		os.Exit(1)
 	}
 
+	if err = (&controllers.NamespaceReconciler{
+		Client: mgr.GetClient(),
+		Log:    ctrl.Log.WithName("controllers").WithName("Namespace"),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "Namespace")
+		os.Exit(1)
+	}
+
 	//+kubebuilder:scaffold:builder
 
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
@@ -117,8 +134,20 @@ func main() {
 	}
 
 	setupLog.Info("starting manager")
-	if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
+	ctx := ctrl.SetupSignalHandler()
+	if err := mgr.Start(ctx); err != nil {
 		setupLog.Error(err, "problem running manager")
+		os.Exit(1)
+	}
+
+	amr := &alertmanager.AlertmanagerReconciler{
+		Client: mgr.GetClient(),
+		Log:    ctrl.Log.WithName("controllers").WithName("Alertmanager"),
+		Scheme: mgr.GetScheme(),
+	}
+
+	if err := alertmanager.SetupAlertmanager(ctx, webhookAddr, amr); err != nil {
+		setupLog.Error(err, "could not setup alertmanager webhook")
 		os.Exit(1)
 	}
 }

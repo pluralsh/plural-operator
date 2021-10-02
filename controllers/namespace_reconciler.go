@@ -21,15 +21,18 @@ import (
 	"fmt"
 
 	"github.com/go-logr/logr"
+	"github.com/pluralsh/plural-operator/resources"
+	"github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
-// ServiceAccountReconciler reconciles a SecretSync object
-type ServiceAccountReconciler struct {
+// NamespaceReconciler reconciles a Namespace object
+type NamespaceReconciler struct {
 	client.Client
 	Log    logr.Logger
 	Scheme *runtime.Scheme
@@ -46,10 +49,10 @@ type ServiceAccountReconciler struct {
 //
 // For more details, check Reconcile and its Result here:
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.7.2/pkg/reconcile
-func (r *ServiceAccountReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	log := r.Log.WithValues("serviceaccount", req.NamespacedName)
+func (r *NamespaceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+	log := r.Log.WithValues("namespace", req.NamespacedName)
 
-	ns := req.NamespacedName.Namespace
+	ns := req.NamespacedName.Name
 	var namespace corev1.Namespace
 	if err := r.Get(ctx, types.NamespacedName{Name: ns}, &namespace); err != nil {
 		log.Error(err, "Failed to fetch namespace")
@@ -61,39 +64,39 @@ func (r *ServiceAccountReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		return ctrl.Result{}, nil
 	}
 
-	// your logic here
-	var serviceaccount corev1.ServiceAccount
-	if err := r.Get(ctx, req.NamespacedName, &serviceaccount); err != nil {
-		log.Error(err, "Failed to fetch serviceaccount resource")
-		return ctrl.Result{}, client.IgnoreNotFound(err)
-	}
+	pluralAlerts := resources.AlertManagerConfig(
+		"plural",
+		"http://plural-operator.bootstrap:3000/webhook",
+		map[string]string{},
+	)
 
-	pullSecrets := serviceaccount.ImagePullSecrets
+	consoleAlerts := resources.AlertManagerConfig(
+		"console",
+		"http://console.console:4000/alertmanager",
+		map[string]string{
+			"severity": "critical",
+		},
+	)
 
-	for _, secret := range pullSecrets {
-		if secret.Name == "plural-creds" {
-			log.Info(fmt.Sprintf("Service account already has creds attached"))
-			return ctrl.Result{}, nil
+	for _, obj := range []*v1alpha1.AlertmanagerConfig{pluralAlerts, consoleAlerts} {
+		obj.SetNamespace(namespace.Name)
+
+		log.Info("Applying alertmanager config", "name", obj.Name)
+		spec := obj.Spec
+		if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, obj, func() error {
+			obj.Spec = spec
+			return nil
+		}); err != nil {
+			return ctrl.Result{}, err
 		}
-	}
-
-	pullSecrets = append(pullSecrets, corev1.LocalObjectReference{
-		Name: "plural-creds",
-	})
-	serviceaccount.ImagePullSecrets = pullSecrets
-
-	if err := r.Update(ctx, &serviceaccount); err != nil {
-		meta := serviceaccount.ObjectMeta
-		log.Error(err, fmt.Sprintf("Failed to add pullsecrets to sa: %s/%s", meta.Namespace, meta.Name))
-		return ctrl.Result{}, err
 	}
 
 	return ctrl.Result{}, nil
 }
 
 // SetupWithManager sets up the controller with the Manager.
-func (r *ServiceAccountReconciler) SetupWithManager(mgr ctrl.Manager) error {
+func (r *NamespaceReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
-		For(&corev1.ServiceAccount{}).
+		For(&corev1.Namespace{}).
 		Complete(r)
 }
