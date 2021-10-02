@@ -76,6 +76,7 @@ func SetupAlertmanager(ctx context.Context, addr string, amr *AlertmanagerReconc
 		if err != nil {
 			log.Error(err, "failed to read alertmanager webhook")
 		}
+		fmt.Println(payload)
 
 		webhookPayload := WebhookPayload{}
 		err = json.Unmarshal([]byte(payload), &webhookPayload)
@@ -87,6 +88,8 @@ func SetupAlertmanager(ctx context.Context, addr string, amr *AlertmanagerReconc
 			log.Error(err, "failed to reconcile alertmanager webhook")
 		}
 	})
+
+	fmt.Printf("Starting alertmanager webhook on %s\n", addr)
 
 	return http.ListenAndServe(addr, server)
 }
