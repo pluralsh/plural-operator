@@ -27,7 +27,10 @@ const (
 
 func matchesRunbook(alert *Alert, runbook *platformv1alpha1.Runbook) bool {
 	for _, val := range runbook.Spec.Alerts {
-		if name, ok := alert.Labels[nameLabel]; ok && name == val.Name {
+		name, ok := alert.Labels[nameLabel]
+		namespace, nsOk := alert.Labels["namespace"]
+
+		if ok && name == val.Name && (!nsOk || namespace == runbook.Namespace) {
 			return true
 		}
 	}
