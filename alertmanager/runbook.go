@@ -38,7 +38,7 @@ func replaceAlert(alerts []*platformv1alpha1.RunbookAlertStatus, alert *Alert) [
 		Fingerprint: alert.Fingerprint,
 	}
 
-	for ind, alert := range alerts {
+	for _, alert := range alerts {
 		if alert.Name != name {
 			result = append(result, alert)
 			continue
