@@ -56,6 +56,12 @@ func (amr *AlertmanagerReconciler) HandleWebhook(ctx context.Context, payload *W
 					Fingerprint: alert.Fingerprint,
 				})
 			}
+
+			if hasMatch {
+				log.Info("Updating status in response to alert", "runbook", runbook.Name, "alert", name)
+			} else {
+				log.Info("Ignoring alert", "runbook", runbook.Name, "alert", name)
+			}
 		}
 
 		if hasMatch {
