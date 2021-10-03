@@ -27,7 +27,6 @@ const (
 
 func (amr *AlertmanagerReconciler) HandleWebhook(ctx context.Context, payload *WebhookPayload) error {
 	log := amr.Log.WithValues("Alertmanager", "reconciler")
-
 	log.Info(fmt.Sprintf("webhook payload %+v", payload))
 
 	runbooks := &platformv1alpha1.RunbookList{}
@@ -41,9 +40,9 @@ func (amr *AlertmanagerReconciler) HandleWebhook(ctx context.Context, payload *W
 		for _, alert := range payload.Alerts {
 			name, _ := alert.Labels[nameLabel]
 			if !matchesRunbook(alert, &runbook) {
-				log.Info("Ignoring alert", "runbook", runbook.Name, "alert", name)
 				continue
 			}
+
 			hasMatch = true
 
 			if alert.Status == ResolvedStatus {
