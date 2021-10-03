@@ -24,3 +24,35 @@ func hasAlert(alerts []*platformv1alpha1.RunbookAlertStatus, name string) bool {
 
 	return false
 }
+
+func replaceAlert(alerts []*platformv1alpha1.RunbookAlertStatus, alert *Alert) []*platformv1alpha1.RunbookAlertStatus {
+	found := false
+	name, _ := alert.Labels[nameLabel]
+
+	for ind, alert := range alerts {
+		if alert.Name != name {
+			continue
+		}
+
+		found = true
+		alerts[ind] = &platformv1alpha1.RunbookAlertStatus{
+			Name:        name,
+			StartsAt:    alert.StartsAt,
+			Annotations: alert.Annotations,
+			Labels:      alert.Labels,
+			Fingerprint: alert.Fingerprint,
+		}
+	}
+
+	if !found {
+		alerts = append(alerts, &platformv1alpha1.RunbookAlertStatus{
+			Name:        name,
+			StartsAt:    alert.StartsAt,
+			Annotations: alert.Annotations,
+			Labels:      alert.Labels,
+			Fingerprint: alert.Fingerprint,
+		})
+	}
+
+	return alerts
+}

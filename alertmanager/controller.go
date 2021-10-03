@@ -48,14 +48,8 @@ func (amr *AlertmanagerReconciler) HandleWebhook(ctx context.Context, payload *W
 
 			if alert.Status == ResolvedStatus {
 				alerts = removeAlert(alerts, name)
-			} else if !hasAlert(alerts, name) {
-				alerts = append(alerts, &platformv1alpha1.RunbookAlertStatus{
-					Name:        name,
-					StartsAt:    alert.StartsAt,
-					Annotations: alert.Annotations,
-					Labels:      alert.Labels,
-					Fingerprint: alert.Fingerprint,
-				})
+			} else {
+				alerts = replaceAlert(alerts, alert)
 			}
 
 			log.Info("Updating status in response to alert", "runbook", runbook.Name, "alert", name)
