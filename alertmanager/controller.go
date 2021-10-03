@@ -39,12 +39,13 @@ func (amr *AlertmanagerReconciler) HandleWebhook(ctx context.Context, payload *W
 		alerts := runbook.Status.Alerts
 		hasMatch := false
 		for _, alert := range payload.Alerts {
+			name, _ := alert.Labels[nameLabel]
 			if !matchesRunbook(alert, &runbook) {
+				log.Info("Ignoring alert", "runbook", runbook.Name, "alert", name)
 				continue
 			}
 			hasMatch = true
 
-			name, _ := alert.Labels[nameLabel]
 			if alert.Status == ResolvedStatus {
 				alerts = removeAlert(alerts, name)
 			} else if !hasAlert(alerts, name) {
@@ -57,11 +58,7 @@ func (amr *AlertmanagerReconciler) HandleWebhook(ctx context.Context, payload *W
 				})
 			}
 
-			if hasMatch {
-				log.Info("Updating status in response to alert", "runbook", runbook.Name, "alert", name)
-			} else {
-				log.Info("Ignoring alert", "runbook", runbook.Name, "alert", name)
-			}
+			log.Info("Updating status in response to alert", "runbook", runbook.Name, "alert", name)
 		}
 
 		if hasMatch {
