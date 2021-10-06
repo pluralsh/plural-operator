@@ -2,7 +2,7 @@
 # since it depends on service name and namespace that are out of this kustomize package.
 # It should be run by config/default
 resources:
-- bases/plural.sh.plural.sh_dashboards.yaml
+- bases/platform.plural.sh_dashboards.yaml
 - bases/platform.plural.sh_logfilters.yaml
 - bases/platform.plural.sh_proxies.yaml
 - bases/platform.plural.sh_slashcommands.yaml

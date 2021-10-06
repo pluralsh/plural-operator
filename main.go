@@ -17,12 +17,16 @@ limitations under the License.
 package main
 
 import (
+	"crypto/sha256"
 	"flag"
+	"io/ioutil"
 	"os"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
+	"k8s.io/klog"
+	"sigs.k8s.io/yaml"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -36,6 +40,9 @@ import (
 	"github.com/pluralsh/plural-operator/controllers"
 
 	amv1alpha1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1alpha1"
+
+	securityv1alpha1 "github.com/pluralsh/plural-operator/api/security/v1alpha1"
+	"sigs.k8s.io/controller-runtime/pkg/webhook"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -53,15 +60,32 @@ func init() {
 	//+kubebuilder:scaffold:scheme
 }
 
+func loadConfig(configFile string) (*securityv1alpha1.Config, error) {
+	data, err := ioutil.ReadFile(configFile)
+	if err != nil {
+		return nil, err
+	}
+	klog.Infof("New configuration: sha256sum %x", sha256.Sum256(data))
+
+	var cfg securityv1alpha1.Config
+	if err := yaml.Unmarshal(data, &cfg); err != nil {
+		return nil, err
+	}
+
+	return &cfg, nil
+}
+
 func main() {
 	var metricsAddr string
 	var enableLeaderElection bool
 	var probeAddr string
-	var webhookAddr string
+	// var webhookAddr string
+	var oauthSidecarConfig string
 
 	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
 	flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
-	flag.StringVar(&webhookAddr, "webhook-bind-address", ":3000", "The address the webhook endpoint binds to.")
+	// flag.StringVar(&webhookAddr, "webhook-bind-address", ":3000", "The address the webhook endpoint binds to.")
+	flag.StringVar(&oauthSidecarConfig, "oauth-sidecar-config-path", "/tmp/k8s-webhook-server/config/oauth-sidecar-config.yaml", "OAuth Webhook sidecar config")
 	flag.BoolVar(&enableLeaderElection, "leader-elect", false,
 		"Enable leader election for controller manager. "+
 			"Enabling this will ensure there is only one active controller manager.")
@@ -133,6 +157,16 @@ func main() {
 		os.Exit(1)
 	}
 
+	config, err := loadConfig(oauthSidecarConfig)
+	if err != nil {
+		setupLog.Error(err, "unable to load oauth injector config")
+		os.Exit(1)
+	}
+
+	// Setup oauth injector mutating webhook
+	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
+		mgr.GetWebhookServer().Register("/mutate-security-plural-sh-v1alpha1-oauthinjector", &webhook.Admission{Handler: &securityv1alpha1.OAuthInjector{Name: "oauth2-proxy", Log: ctrl.Log.WithName("webhooks").WithName("oauth-injector"), Client: mgr.GetClient(), SidecarConfig: config}})
+	}
 	//+kubebuilder:scaffold:builder
 
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {

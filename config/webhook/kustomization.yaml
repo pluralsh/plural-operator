@@ -1,0 +1,17 @@
+resources:
+- manifests.yaml
+- service.yaml
+
+patchesStrategicMerge:
+- patches/oauth_injector_selector.yaml
+
+generatorOptions:
+  disableNameSuffixHash: true
+
+configMapGenerator:
+- name: oauth-sidecar-config
+  files:
+  - oauth-sidecar-config.yaml
+
+configurations:
+- kustomizeconfig.yaml
