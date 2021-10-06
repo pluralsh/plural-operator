@@ -54,17 +54,21 @@ func (oi *OAuthInjector) Handle(ctx context.Context, req admission.Request) admi
 
 	log.Info("Injecting sidecar...")
 
-	secretRef := corev1.EnvFromSource{
-		SecretRef: &corev1.SecretEnvSource{
-			LocalObjectReference: corev1.LocalObjectReference{
-				Name: pod.Annotations["security.plural.sh/oauth-env-secret"],
+	secretRef := &[]corev1.EnvFromSource{
+		{
+			SecretRef: &corev1.SecretEnvSource{
+				LocalObjectReference: corev1.LocalObjectReference{
+					Name: pod.Annotations["security.plural.sh/oauth-env-secret"],
+				},
 			},
 		},
 	}
 
-	oi.SidecarConfig.Containers[0].EnvFrom = append(oi.SidecarConfig.Containers[0].EnvFrom, secretRef)
+	sidecarConfig := &Config{}
+	sidecarConfig = oi.SidecarConfig
+	sidecarConfig.Containers[0].EnvFrom = *secretRef
 
-	pod.Spec.Containers = append(pod.Spec.Containers, oi.SidecarConfig.Containers...)
+	pod.Spec.Containers = append(pod.Spec.Containers, sidecarConfig.Containers...)
 
 	log.Info("Sidecar ", oi.Name, " injected.")
 
