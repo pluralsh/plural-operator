@@ -1,0 +1,9 @@
+apiVersion: platform.plural.sh/v1alpha1
+kind: StatefulSetResize
+metadata:
+  name: test
+  namespace: influx
+spec:
+  name: influxdb
+  persistentVolume: influxdb-data
+  size: 23Gi

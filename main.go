@@ -41,8 +41,9 @@ import (
 
 	amv1alpha1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1alpha1"
 
-	securityv1alpha1 "github.com/pluralsh/plural-operator/api/security/v1alpha1"
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
+
+	securityv1alpha1 "github.com/pluralsh/plural-operator/api/security/v1alpha1"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -157,15 +158,34 @@ func main() {
 		os.Exit(1)
 	}
 
-	config, err := loadConfig(oauthSidecarConfig)
-	if err != nil {
-		setupLog.Error(err, "unable to load oauth injector config")
-		os.Exit(1)
-	}
-
 	// Setup oauth injector mutating webhook
 	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
-		mgr.GetWebhookServer().Register("/mutate-security-plural-sh-v1alpha1-oauthinjector", &webhook.Admission{Handler: &securityv1alpha1.OAuthInjector{Name: "oauth2-proxy", Log: ctrl.Log.WithName("webhooks").WithName("oauth-injector"), Client: mgr.GetClient(), SidecarConfig: config}})
+		config, err := loadConfig(oauthSidecarConfig)
+		if err != nil {
+			setupLog.Error(err, "unable to load oauth injector config")
+			os.Exit(1)
+		}
+
+		mgr.GetWebhookServer().Register(
+			"/mutate-security-plural-sh-v1alpha1-oauthinjector",
+			&webhook.Admission{
+				Handler: &securityv1alpha1.OAuthInjector{
+					Name:          "oauth2-proxy",
+					Log:           ctrl.Log.WithName("webhooks").WithName("oauth-injector"),
+					Client:        mgr.GetClient(),
+					SidecarConfig: config,
+				},
+			},
+		)
+	}
+
+	if err = (&controllers.StatefulSetResizeReconciler{
+		Client: mgr.GetClient(),
+		Log:    ctrl.Log.WithName("controllers").WithName("StatefulSetResize"),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "StatefulSetResize")
+		os.Exit(1)
 	}
 	//+kubebuilder:scaffold:builder
 

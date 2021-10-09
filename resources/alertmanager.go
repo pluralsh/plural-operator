@@ -17,7 +17,7 @@ func AlertManagerConfig(name, url string, labels map[string]string) *v1alpha1.Al
 				{
 					Name: name,
 					WebhookConfigs: []v1alpha1.WebhookConfig{
-						{SendResolved: boolPtr(true), URL: stringPtr(url), MaxAlerts: 0},
+						{SendResolved: BoolPtr(true), URL: StringPtr(url), MaxAlerts: 0},
 					},
 				},
 			},

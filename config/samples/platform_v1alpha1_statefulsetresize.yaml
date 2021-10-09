@@ -1,0 +1,7 @@
+apiVersion: platform.plural.sh/v1alpha1
+kind: StatefulSetResize
+metadata:
+  name: statefulsetresize-sample
+spec:
+  # Add fields here
+  foo: bar
