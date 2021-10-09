@@ -81,6 +81,18 @@ type PathUpdate struct {
 	ValueFrom string `json:"valueFrom"`
 }
 
+// details for any statefulset resizes to apply
+type StatefulsetResize struct {
+	// name of statefulset
+	Name string `json:"name"`
+
+	// persistent volume to resize
+	PersistentVolume string `json:"persistentVolume"`
+
+	// the value to use from the args for the execution
+	ValueFrom string `json:"valueFrom"`
+}
+
 // A representation of a plural configuration update
 type ConfigurationAction struct {
 	// The updates you want to perform
@@ -88,7 +100,7 @@ type ConfigurationAction struct {
 
 	// stateful sets to clean before rebuilding (for pvc resizes)
 	// +optional
-	StatefulSets []string `json:"statefulSets"`
+	StatefulSets []*StatefulsetResize `json:"statefulSets"`
 }
 
 // RunbookAction represents an action to be performed in a runbook
