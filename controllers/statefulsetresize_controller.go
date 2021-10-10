@@ -43,6 +43,16 @@ type StatefulSetResizeReconciler struct {
 	Scheme *runtime.Scheme
 }
 
+func (r *StatefulSetResizeReconciler) cleanup(ctx context.Context, resize *platformv1alpha1.StatefulSetResize) (ctrl.Result, error) {
+	log := r.Log.WithValues("statefulsetresize", resize.Name)
+	if err := r.Delete(ctx, resize); err != nil {
+		log.Error(err, "failed to destroy resize resource once finished", "resize", resize.Name)
+		return ctrl.Result{}, err
+	}
+
+	return ctrl.Result{}, nil
+}
+
 //+kubebuilder:rbac:groups=platform.plural.sh,resources=statefulsetresizes,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=platform.plural.sh,resources=statefulsetresizes/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=platform.plural.sh,resources=statefulsetresizes/finalizers,verbs=update
@@ -88,7 +98,7 @@ func (r *StatefulSetResizeReconciler) Reconcile(ctx context.Context, req ctrl.Re
 		if cl.Name == resize.Spec.PersistentVolume {
 			if quant.Cmp(cl.Spec.Resources.Requests["storage"]) == 0 {
 				log.Info("No change needed for storage")
-				return ctrl.Result{}, nil
+				return r.cleanup(ctx, &resize)
 			}
 
 			cl.Spec.Resources.Requests["storage"] = quant
@@ -188,13 +198,8 @@ func (r *StatefulSetResizeReconciler) Reconcile(ctx context.Context, req ctrl.Re
 		return ctrl.Result{}, err
 	}
 
-	if err := r.Delete(ctx, &resize); err != nil {
-		log.Error(err, "failed to destroy resize resource once finished", "resize", resize.Name)
-		return ctrl.Result{}, err
-	}
-
 	log.Info("Successfully resized pvc for statefulset", "statefulset", newStatefulSet.Name)
-	return ctrl.Result{}, nil
+	return r.cleanup(ctx, &resize)
 }
 
 // SetupWithManager sets up the controller with the Manager.
