@@ -1,0 +1,7 @@
+apiVersion: plaform.plural.sh.plural.sh/v1alpha1
+kind: DefaultStorageClass
+metadata:
+  name: defaultstorageclass-sample
+spec:
+  # Add fields here
+  foo: bar
