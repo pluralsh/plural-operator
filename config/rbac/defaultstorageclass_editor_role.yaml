@@ -1,0 +1,24 @@
+# permissions for end users to edit defaultstorageclasses.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: defaultstorageclass-editor-role
+rules:
+- apiGroups:
+  - plaform.plural.sh.plural.sh
+  resources:
+  - defaultstorageclasses
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - plaform.plural.sh.plural.sh
+  resources:
+  - defaultstorageclasses/status
+  verbs:
+  - get

@@ -187,6 +187,14 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "StatefulSetResize")
 		os.Exit(1)
 	}
+	if err = (&controllers.DefaultStorageClassReconciler{
+		Client: mgr.GetClient(),
+		Log:    ctrl.Log.WithName("controllers").WithName("plaform.plural.sh").WithName("DefaultStorageClass"),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "DefaultStorageClass")
+		os.Exit(1)
+	}
 	//+kubebuilder:scaffold:builder
 
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
