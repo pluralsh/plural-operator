@@ -324,12 +324,18 @@ func CopyDeploymentSetFields(from, to *appsv1.Deployment) bool {
 			requireUpdate = true
 		}
 	}
+	if len(to.Labels) == 0 && len(from.Labels) != 0 {
+		requireUpdate = true
+	}
 	to.Labels = from.Labels
 
 	for k, v := range to.Annotations {
 		if from.Annotations[k] != v {
 			requireUpdate = true
 		}
+	}
+	if len(to.Annotations) == 0 && len(from.Annotations) != 0 {
+		requireUpdate = true
 	}
 	to.Annotations = from.Annotations
 
@@ -354,12 +360,18 @@ func CopyServiceFields(from, to *corev1.Service) bool {
 			requireUpdate = true
 		}
 	}
+	if len(to.Labels) == 0 && len(from.Labels) != 0 {
+		requireUpdate = true
+	}
 	to.Labels = from.Labels
 
 	for k, v := range to.Annotations {
 		if from.Annotations[k] != v {
 			requireUpdate = true
 		}
+	}
+	if len(to.Annotations) == 0 && len(from.Annotations) != 0 {
+		requireUpdate = true
 	}
 	to.Annotations = from.Annotations
 
@@ -386,12 +398,18 @@ func CopyServiceAccount(from, to *corev1.ServiceAccount) bool {
 			requireUpdate = true
 		}
 	}
+	if len(to.Labels) == 0 && len(from.Labels) != 0 {
+		requireUpdate = true
+	}
 	to.Labels = from.Labels
 
 	for k, v := range to.Annotations {
 		if from.Annotations[k] != v {
 			requireUpdate = true
 		}
+	}
+	if len(to.Annotations) == 0 && len(from.Annotations) != 0 {
+		requireUpdate = true
 	}
 	to.Annotations = from.Annotations
 
@@ -417,12 +435,18 @@ func CopyRoleBinding(from, to *rbacv1.RoleBinding) bool {
 			requireUpdate = true
 		}
 	}
+	if len(to.Labels) == 0 && len(from.Labels) != 0 {
+		requireUpdate = true
+	}
 	to.Labels = from.Labels
 
 	for k, v := range to.Annotations {
 		if from.Annotations[k] != v {
 			requireUpdate = true
 		}
+	}
+	if len(to.Annotations) == 0 && len(from.Annotations) != 0 {
+		requireUpdate = true
 	}
 	to.Annotations = from.Annotations
 
@@ -448,12 +472,18 @@ func CopyNetworkPolicy(from, to *networkv1.NetworkPolicy) bool {
 			requireUpdate = true
 		}
 	}
+	if len(to.Labels) == 0 && len(from.Labels) != 0 {
+		requireUpdate = true
+	}
 	to.Labels = from.Labels
 
 	for k, v := range to.Annotations {
 		if from.Annotations[k] != v {
 			requireUpdate = true
 		}
+	}
+	if len(to.Annotations) == 0 && len(from.Annotations) != 0 {
+		requireUpdate = true
 	}
 	to.Annotations = from.Annotations
 
@@ -473,12 +503,18 @@ func CopyNamespace(from, to *corev1.Namespace) bool {
 			requireUpdate = true
 		}
 	}
+	if len(to.Labels) == 0 && len(from.Labels) != 0 {
+		requireUpdate = true
+	}
 	to.Labels = from.Labels
 
 	for k, v := range to.Annotations {
 		if from.Annotations[k] != v {
 			requireUpdate = true
 		}
+	}
+	if len(to.Annotations) == 0 && len(from.Annotations) != 0 {
+		requireUpdate = true
 	}
 	to.Annotations = from.Annotations
 
