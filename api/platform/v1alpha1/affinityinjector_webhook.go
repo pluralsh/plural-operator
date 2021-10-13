@@ -18,9 +18,9 @@ package v1alpha1
 
 import (
 	"context"
-	"strings"
 	"encoding/json"
 	"net/http"
+	"strings"
 
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
@@ -31,14 +31,14 @@ import (
 //+kubebuilder:webhook:path=/mutate-platform-plural-sh-v1alpha1-affinityinjector,mutating=true,failurePolicy=fail,sideEffects=None,groups="",resources=pods,verbs=create;update,versions=v1,name=maffinityinjector.platform.plural.sh,admissionReviewVersions={v1,v1beta1}
 
 type AffinityInjector struct {
-	Name          string
-	Client        client.Client
-	Log           logr.Logger
-	decoder       *admission.Decoder
+	Name    string
+	Client  client.Client
+	Log     logr.Logger
+	decoder *admission.Decoder
 }
 
 const (
-	groupLabel = "platform.plural.sh/resource-groups"
+	groupLabel    = "platform.plural.sh/resource-groups"
 	requiredLabel = "platform.plural.sh/resource-required"
 )
 
@@ -61,17 +61,17 @@ func (oi *AffinityInjector) Handle(ctx context.Context, req admission.Request) a
 		relevantGroup[group] = true
 	}
 
-	var rgs v1alpha1.ResourceGroupList
+	var rgs ResourceGroupList
 	if err := oi.Client.List(ctx, &rgs); err != nil {
 		log.Error(err, "Failed to list resource groups")
 		return admission.Errored(http.StatusInternalServerError, err)
 	}
 
-	appliedGroups := make([]*v1alpha1.ResourceGroup, 0)
+	appliedGroups := make([]*ResourceGroup, 0)
 
 	for _, group := range rgs.Items {
 		if _, ok := relevantGroup[group.Name]; ok {
-			appliedGroups = append(appliedGroups, group)
+			appliedGroups = append(appliedGroups, &group)
 		}
 	}
 
@@ -79,29 +79,34 @@ func (oi *AffinityInjector) Handle(ctx context.Context, req admission.Request) a
 		return admission.Allowed("no resource groups applicable")
 	}
 
-	affinity := pod.Affinity
-	
-	if req, ok := pod.Labels[requiredLabel]; ok {
-		required := affinity.RequiredDuringSchedulingIgnoredDuringExecution
+	affinity := pod.Spec.Affinity
+	if affinity != nil {
+		affinity = &corev1.Affinity{}
+	}
+	nodeAffinity := affinity.NodeAffinity
+
+	if _, ok := pod.Labels[requiredLabel]; ok {
+		required := nodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution
 		terms := required.NodeSelectorTerms
 		for _, group := range appliedGroups {
-			terms = append(terms, group.Selector)
+			terms = append(terms, group.Spec.Selector)
 		}
-		affinity.RequiredDuringSchedulingIgnoredDuringExecution = &corev1.NodeSelector{
+		nodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution = &corev1.NodeSelector{
 			NodeSelectorTerms: terms,
 		}
 	} else {
-		preferred := affinity.PreferredDuringSchedulingIgnoredDuringExecution
+		preferred := nodeAffinity.PreferredDuringSchedulingIgnoredDuringExecution
 		for _, group := range appliedGroups {
-			preferred = append(preferred, &corev1.PreferredSchedulingTerm{
-				Weight: 50,
-				Preference: group.Selector,
+			preferred = append(preferred, corev1.PreferredSchedulingTerm{
+				Weight:     50,
+				Preference: group.Spec.Selector,
 			})
 		}
-		affinity.PreferredDuringSchedulingIgnoredDuringExecution = preferred
+		nodeAffinity.PreferredDuringSchedulingIgnoredDuringExecution = preferred
 	}
 
-	pod.Affinity = affinity
+	affinity.NodeAffinity = nodeAffinity
+	pod.Spec.Affinity = affinity
 	marshaledPod, err := json.Marshal(pod)
 
 	if err != nil {
