@@ -14,7 +14,7 @@ spec:
     listKind: DefaultStorageClassList
     plural: defaultstorageclasses
     singular: defaultstorageclass
-  scope: cluster
+  scope: Cluster
   versions:
   - name: v1alpha1
     schema:

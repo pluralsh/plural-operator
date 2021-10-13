@@ -33,7 +33,7 @@ type DefaultStorageClassStatus struct {
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
-//+kubebuilder:resource:scope=cluster
+//+kubebuilder:resource:scope=Cluster
 
 // DefaultStorageClass is the Schema for the defaultstorageclasses API
 type DefaultStorageClass struct {

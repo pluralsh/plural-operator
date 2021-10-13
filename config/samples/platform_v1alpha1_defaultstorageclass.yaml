@@ -1,0 +1,6 @@
+apiVersion: platform.plural.sh/v1alpha1
+kind: DefaultStorageClass
+metadata:
+  name: default
+spec:
+  name: ebs-csi

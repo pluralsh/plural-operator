@@ -18,15 +18,18 @@ package controllers
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/go-logr/logr"
 	storagev1 "k8s.io/api/storage/v1"
+	apierrs "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	platformv1alpha1 "github.com/pluralsh/plural-operator/api/platform/v1alpha1"
+	"github.com/pluralsh/plural-operator/resources"
 )
 
 const (
@@ -46,7 +49,6 @@ type DefaultStorageClassReconciler struct {
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
-// TODO(user): Modify the Reconcile function to compare the state specified by
 // the DefaultStorageClass object against the actual cluster state, and then
 // perform operations to make the cluster state reflect the state specified by
 // the user.
@@ -56,58 +58,48 @@ type DefaultStorageClassReconciler struct {
 func (r *DefaultStorageClassReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := r.Log.WithValues("defaultstorageclass", req.NamespacedName)
 
-	var defaultstorage platformv1alpha1.DefaultStorageClass
+	defaultstorageInstance := &platformv1alpha1.DefaultStorageClass{}
 
-	if req.NamespacedName.Name != "default" {
-		err := fmt.Errorf("Cannot reconcile default storage class resource with name %s", req.NamespacedName.Name)
-		log.Error(err, "forcibly ignoring invalid name", "name", req.NamespacedName.Name)
-		return ctrl.Result{}, err
-	}
-
-	if err := r.Get(ctx, req.NamespacedName, &defaultstorage); err != nil {
+	if err := r.Get(ctx, req.NamespacedName, defaultstorageInstance); err != nil {
 		log.Error(err, "could not fetch default storage class resource")
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	classes := &storagev1.StorageClassList{}
-	var storageClass *storagev1.StorageClass
-	var currDefault *storagev1.StorageClass
-	if err := r.List(ctx, classes); err != nil {
+	var foundStorageClass storagev1.StorageClass
+
+	// Update storageClass
+	// Update the storage class so that it becomes the default
+	storageClass := r.generateStorageClass(defaultstorageInstance)
+	// Don't continue if the storage class does not exist. Without this check resources.StorageClass would create the storage class
+	if err := r.Get(ctx, types.NamespacedName{Name: defaultstorageInstance.Spec.Name}, &foundStorageClass); err != nil {
+		if apierrs.IsNotFound(err) {
+			log.Info("storage class does not exist", "class", defaultstorageInstance.Spec.Name)
+			return ctrl.Result{}, nil
+		}
+	} else if err := resources.StorageClass(ctx, r.Client, storageClass, log); err != nil {
+		log.Error(err, "Error reconciling default StorageClass", "class", storageClass.Name)
+		return ctrl.Result{}, err
+	}
+
+	var classes storagev1.StorageClassList
+
+	// Get the list of storage classes from the cluster
+	if err := r.List(ctx, &classes); err != nil {
 		log.Error(err, "could not list storage classes")
 		return ctrl.Result{}, err
 	}
 
 	for _, class := range classes.Items {
-		fmt.Printf("%+v", class)
-		if _, ok := class.Annotations[defaultStorageAnnotation]; ok {
-			currDefault = &class
-		}
-
-		if class.Name == defaultstorage.Spec.Name {
-			storageClass = &class
-		}
-	}
-
-	if storageClass == nil {
-		err := fmt.Errorf("Could not find storage class matching %s", defaultstorage.Spec.Name)
-		log.Error(err, "failed to find storage class")
-		return ctrl.Result{}, err
-	}
-
-	if currDefault != nil && currDefault.Name != defaultstorage.Spec.Name {
-		delete(currDefault.Annotations, defaultStorageAnnotation)
-		if err := r.Update(ctx, currDefault); err != nil {
-			log.Error(err, "failed to update previous default", "storageclass", currDefault.Name)
-			return ctrl.Result{}, err
+		// fmt.Printf("%+v", class)
+		if _, ok := class.Annotations[defaultStorageAnnotation]; ok && class.Name != defaultstorageInstance.Spec.Name {
+			log.Info("setting storage class to non-default", "class", class.Name)
+			class.Annotations[defaultStorageAnnotation] = "false"
+			if err := r.Update(ctx, &class); err != nil {
+				log.Error(err, "failed to update previous default", "storageclass", class.Name)
+				return ctrl.Result{}, err
+			}
 		}
 	}
-
-	storageClass.Annotations[defaultStorageAnnotation] = "true"
-	if err := r.Update(ctx, storageClass); err != nil {
-		log.Error(err, "failed to modify default storage class", "storageclass", storageClass.Name)
-		return ctrl.Result{}, err
-	}
-
 	return ctrl.Result{}, nil
 }
 
@@ -116,4 +108,15 @@ func (r *DefaultStorageClassReconciler) SetupWithManager(mgr ctrl.Manager) error
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&platformv1alpha1.DefaultStorageClass{}).
 		Complete(r)
+}
+
+// Define the desired Istio RequestAuthentication object that's used to validate JWTs of requests
+func (r *DefaultStorageClassReconciler) generateStorageClass(defaultstorageInstance *platformv1alpha1.DefaultStorageClass) *storagev1.StorageClass {
+	storageClass := &storagev1.StorageClass{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:        defaultstorageInstance.Spec.Name,
+			Annotations: map[string]string{defaultStorageAnnotation: "true"},
+		},
+	}
+	return storageClass
 }

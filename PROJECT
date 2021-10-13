@@ -82,6 +82,6 @@ resources:
   domain: plural.sh
   group: platform
   kind: DefaultStorageClass
-  path: github.com/pluralsh/plural-operator/api/plaform/v1alpha1
+  path: github.com/pluralsh/plural-operator/api/platform/v1alpha1
   version: v1alpha1
 version: "3"

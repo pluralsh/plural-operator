@@ -3,6 +3,7 @@ module github.com/pluralsh/plural-operator
 go 1.15
 
 require (
+	github.com/cenkalti/backoff v2.2.1+incompatible
 	github.com/go-logr/logr v0.4.0
 	github.com/onsi/ginkgo v1.16.4
 	github.com/onsi/gomega v1.13.0

@@ -9,8 +9,16 @@ resources:
 - bases/platform.plural.sh_secretsyncs.yaml
 - bases/platform.plural.sh_runbooks.yaml
 - bases/platform.plural.sh_statefulsetresizes.yaml
-- bases/plaform.plural.sh.plural.sh_defaultstorageclasses.yaml
+- bases/platform.plural.sh_defaultstorageclasses.yaml
 #+kubebuilder:scaffold:crdkustomizeresource
+
+patchesJson6902:
+  - target:
+      group: apiextensions.k8s.io
+      version: v1
+      kind: CustomResourceDefinition
+      name: defaultstorageclasses.platform.plural.sh
+    path: patches/defauflstorageclass_singleton.yaml
 
 patchesStrategicMerge:
 # [WEBHOOK] To enable webhook, uncomment all the sections with [WEBHOOK] prefix.
@@ -23,6 +31,7 @@ patchesStrategicMerge:
 #- patches/webhook_in_runbooks.yaml
 #- patches/webhook_in_statefulsetresizes.yaml
 #- patches/webhook_in_defaultstorageclasses.yaml
+# - patches/defauflstorageclass_singleton.yaml
 #+kubebuilder:scaffold:crdkustomizewebhookpatch
 
 # [CERTMANAGER] To enable webhook, uncomment all the sections with [CERTMANAGER] prefix.
