@@ -30,6 +30,7 @@ import (
 )
 
 //+kubebuilder:webhook:path=/mutate-platform-plural-sh-v1alpha1-affinityinjector,mutating=true,failurePolicy=fail,sideEffects=None,groups="",resources=pods,verbs=create;update,versions=v1,name=maffinityinjector.platform.plural.sh,admissionReviewVersions={v1,v1beta1}
+//+kubebuilder:rbac:groups="platform.plural.sh",resources=resourcegroups,verbs=get;list;watch
 
 type AffinityInjector struct {
 	client.Client
@@ -44,11 +45,11 @@ const (
 )
 
 // AffinityInjector adds configured node affinities to a pod
-func (oi *AffinityInjector) Handle(ctx context.Context, req admission.Request) admission.Response {
-	log := oi.Log.WithValues("webhook", req.AdmissionRequest.Name)
+func (ai *AffinityInjector) Handle(ctx context.Context, req admission.Request) admission.Response {
+	log := ai.Log.WithValues("webhook", req.AdmissionRequest.Name)
 	pod := &corev1.Pod{}
 
-	err := oi.decoder.Decode(req, pod)
+	err := ai.decoder.Decode(req, pod)
 	if err != nil {
 		log.Info("Affinity-Injector: cannot decode")
 		return admission.Errored(http.StatusBadRequest, err)
@@ -63,7 +64,7 @@ func (oi *AffinityInjector) Handle(ctx context.Context, req admission.Request) a
 	}
 
 	var rgs platformv1alpha1.ResourceGroupList
-	if err := oi.Client.List(ctx, &rgs); err != nil {
+	if err := ai.Client.List(ctx, &rgs); err != nil {
 		log.Error(err, "Failed to list resource groups")
 		return admission.Errored(http.StatusInternalServerError, err)
 	}
@@ -121,7 +122,7 @@ func (oi *AffinityInjector) Handle(ctx context.Context, req admission.Request) a
 // AffinityInjector implements admission.DecoderInjector.
 // A decoder will be automatically injected.
 // InjectDecoder injects the decoder.
-func (oi *AffinityInjector) InjectDecoder(d *admission.Decoder) error {
-	oi.decoder = d
+func (ai *AffinityInjector) InjectDecoder(d *admission.Decoder) error {
+	ai.decoder = d
 	return nil
 }

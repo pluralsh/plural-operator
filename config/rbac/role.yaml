@@ -61,6 +61,14 @@ rules:
 - apiGroups:
   - platform.plural.sh
   resources:
+  - resourcegroups
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - platform.plural.sh
+  resources:
   - secretsyncs
   verbs:
   - create
@@ -110,3 +118,13 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - storage.k8s.io
+  resources:
+  - storageclasses
+  verbs:
+  - get
+  - list
+  - patch
+  - update
+  - watch
