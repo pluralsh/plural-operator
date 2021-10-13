@@ -3,13 +3,14 @@
 # It should be run by config/default
 resources:
 - bases/platform.plural.sh_dashboards.yaml
-- bases/platform.plural.sh_logfilters.yaml
-- bases/platform.plural.sh_proxies.yaml
-- bases/platform.plural.sh_slashcommands.yaml
-- bases/platform.plural.sh_secretsyncs.yaml
-- bases/platform.plural.sh_runbooks.yaml
-- bases/platform.plural.sh_statefulsetresizes.yaml
 - bases/platform.plural.sh_defaultstorageclasses.yaml
+- bases/platform.plural.sh_logfilters.yaml
+- bases/platform.plural.sh_logtails.yaml
+- bases/platform.plural.sh_proxies.yaml
+- bases/platform.plural.sh_runbooks.yaml
+- bases/platform.plural.sh_secretsyncs.yaml
+- bases/platform.plural.sh_slashcommands.yaml
+- bases/platform.plural.sh_statefulsetresizes.yaml
 #+kubebuilder:scaffold:crdkustomizeresource
 
 patchesJson6902:
