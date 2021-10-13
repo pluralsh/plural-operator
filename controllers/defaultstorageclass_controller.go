@@ -110,7 +110,7 @@ func (r *DefaultStorageClassReconciler) SetupWithManager(mgr ctrl.Manager) error
 		Complete(r)
 }
 
-// Define the desired Istio RequestAuthentication object that's used to validate JWTs of requests
+// create a dummy storage class object
 func (r *DefaultStorageClassReconciler) generateStorageClass(defaultstorageInstance *platformv1alpha1.DefaultStorageClass) *storagev1.StorageClass {
 	storageClass := &storagev1.StorageClass{
 		ObjectMeta: metav1.ObjectMeta{

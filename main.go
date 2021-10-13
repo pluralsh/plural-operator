@@ -43,7 +43,8 @@ import (
 
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
-	securityv1alpha1 "github.com/pluralsh/plural-operator/api/security/v1alpha1"
+	platformhooks "github.com/pluralsh/plural-operator/api/platform/v1alpha1/hooks"
+	securityhooks "github.com/pluralsh/plural-operator/api/security/v1alpha1/hooks"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -61,14 +62,14 @@ func init() {
 	//+kubebuilder:scaffold:scheme
 }
 
-func loadConfig(configFile string) (*securityv1alpha1.Config, error) {
+func loadConfig(configFile string) (*securityhooks.Config, error) {
 	data, err := ioutil.ReadFile(configFile)
 	if err != nil {
 		return nil, err
 	}
 	klog.Infof("New configuration: sha256sum %x", sha256.Sum256(data))
 
-	var cfg securityv1alpha1.Config
+	var cfg securityhooks.Config
 	if err := yaml.Unmarshal(data, &cfg); err != nil {
 		return nil, err
 	}
@@ -203,7 +204,7 @@ func main() {
 		mgr.GetWebhookServer().Register(
 			"/mutate-security-plural-sh-v1alpha1-oauthinjector",
 			&webhook.Admission{
-				Handler: &securityv1alpha1.OAuthInjector{
+				Handler: &securityhooks.OAuthInjector{
 					Name:          "oauth2-proxy",
 					Log:           ctrl.Log.WithName("webhooks").WithName("oauth-injector"),
 					Client:        mgr.GetClient(),
@@ -215,7 +216,7 @@ func main() {
 		mgr.GetWebhookServer().Register(
 			"/mutate-platform-plural-sh-v1alpha1-affinityinjector",
 			&webhook.Admission{
-				Handler: &platformv1alpha1.AffinityInjector{
+				Handler: &platformhooks.AffinityInjector{
 					Name:   "affinity-injector",
 					Log:    ctrl.Log.WithName("webhooks").WithName("affinity-injector"),
 					Client: mgr.GetClient(),

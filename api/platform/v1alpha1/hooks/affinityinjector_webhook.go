@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package v1alpha1
+package hooks
 
 import (
 	"context"
@@ -23,6 +23,7 @@ import (
 	"strings"
 
 	"github.com/go-logr/logr"
+	platformv1alpha1 "github.com/pluralsh/plural-operator/api/platform/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
@@ -31,8 +32,8 @@ import (
 //+kubebuilder:webhook:path=/mutate-platform-plural-sh-v1alpha1-affinityinjector,mutating=true,failurePolicy=fail,sideEffects=None,groups="",resources=pods,verbs=create;update,versions=v1,name=maffinityinjector.platform.plural.sh,admissionReviewVersions={v1,v1beta1}
 
 type AffinityInjector struct {
+	client.Client
 	Name    string
-	Client  client.Client
 	Log     logr.Logger
 	decoder *admission.Decoder
 }
@@ -61,13 +62,13 @@ func (oi *AffinityInjector) Handle(ctx context.Context, req admission.Request) a
 		relevantGroup[group] = true
 	}
 
-	var rgs ResourceGroupList
+	var rgs platformv1alpha1.ResourceGroupList
 	if err := oi.Client.List(ctx, &rgs); err != nil {
 		log.Error(err, "Failed to list resource groups")
 		return admission.Errored(http.StatusInternalServerError, err)
 	}
 
-	appliedGroups := make([]*ResourceGroup, 0)
+	appliedGroups := make([]*platformv1alpha1.ResourceGroup, 0)
 
 	for _, group := range rgs.Items {
 		if _, ok := relevantGroup[group.Name]; ok {
