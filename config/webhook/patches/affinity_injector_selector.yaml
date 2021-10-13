@@ -1,0 +1,11 @@
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingWebhookConfiguration
+metadata:
+  creationTimestamp: null
+  name: mutating-webhook-configuration
+webhooks:
+- name: maffinityinjector.platform.plural.sh
+  objectSelector:
+    matchExpressions:
+    - key: platform.plural.sh/resource-groups
+      operator: Exists

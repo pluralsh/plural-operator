@@ -17,19 +17,14 @@ limitations under the License.
 package v1alpha1
 
 import (
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
-// NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
-
 // ResourceGroupSpec defines the desired state of ResourceGroup
 type ResourceGroupSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
-
-	// Foo is an example field of ResourceGroup. Edit resourcegroup_types.go to remove/update
-	Foo string `json:"foo,omitempty"`
+	// the node selector to use for this group
+	Selector corev1.NodeSelectorTerm `json:"selector"`
 }
 
 // ResourceGroupStatus defines the observed state of ResourceGroup
@@ -40,6 +35,7 @@ type ResourceGroupStatus struct {
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
+//+kubebuilder:resource:scope=Cluster
 
 // ResourceGroup is the Schema for the resourcegroups API
 type ResourceGroup struct {

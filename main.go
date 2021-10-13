@@ -158,27 +158,6 @@ func main() {
 		os.Exit(1)
 	}
 
-	// Setup oauth injector mutating webhook
-	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
-		config, err := loadConfig(oauthSidecarConfig)
-		if err != nil {
-			setupLog.Error(err, "unable to load oauth injector config")
-			os.Exit(1)
-		}
-
-		mgr.GetWebhookServer().Register(
-			"/mutate-security-plural-sh-v1alpha1-oauthinjector",
-			&webhook.Admission{
-				Handler: &securityv1alpha1.OAuthInjector{
-					Name:          "oauth2-proxy",
-					Log:           ctrl.Log.WithName("webhooks").WithName("oauth-injector"),
-					Client:        mgr.GetClient(),
-					SidecarConfig: config,
-				},
-			},
-		)
-	}
-
 	if err = (&controllers.StatefulSetResizeReconciler{
 		Client: mgr.GetClient(),
 		Log:    ctrl.Log.WithName("controllers").WithName("StatefulSetResize"),
@@ -211,6 +190,38 @@ func main() {
 	if err := mgr.AddMetricsExtraHandler("/webhook", alertmanager.AlertmanagerHandler(ctx, amr)); err != nil {
 		setupLog.Error(err, "unable to set up alertmanager webhook")
 		os.Exit(1)
+	}
+
+	// Setup oauth injector mutating webhook
+	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
+		config, err := loadConfig(oauthSidecarConfig)
+		if err != nil {
+			setupLog.Error(err, "unable to load oauth injector config")
+			os.Exit(1)
+		}
+
+		mgr.GetWebhookServer().Register(
+			"/mutate-security-plural-sh-v1alpha1-oauthinjector",
+			&webhook.Admission{
+				Handler: &securityv1alpha1.OAuthInjector{
+					Name:          "oauth2-proxy",
+					Log:           ctrl.Log.WithName("webhooks").WithName("oauth-injector"),
+					Client:        mgr.GetClient(),
+					SidecarConfig: config,
+				},
+			},
+		)
+
+		mgr.GetWebhookServer().Register(
+			"/mutate-platform-plural-sh-v1alpha1-affinityinjector",
+			&webhook.Admission{
+				Handler: &platformv1alpha1.AffinityInjector{
+					Name:          "affinity-injector",
+					Log:           ctrl.Log.WithName("webhooks").WithName("affinity-injector"),
+					Client:        mgr.GetClient(),
+				},
+			},
+		)
 	}
 
 	setupLog.Info("starting manager")
