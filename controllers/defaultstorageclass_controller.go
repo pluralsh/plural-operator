@@ -93,7 +93,7 @@ func (r *DefaultStorageClassReconciler) Reconcile(ctx context.Context, req ctrl.
 		// fmt.Printf("%+v", class)
 		if _, ok := class.Annotations[defaultStorageAnnotation]; ok && class.Name != defaultstorageInstance.Spec.Name {
 			log.Info("setting storage class to non-default", "class", class.Name)
-			class.Annotations[defaultStorageAnnotation] = "false"
+			delete(class.Annotations, defaultStorageAnnotation)
 			if err := r.Update(ctx, &class); err != nil {
 				log.Error(err, "failed to update previous default", "storageclass", class.Name)
 				return ctrl.Result{}, err
