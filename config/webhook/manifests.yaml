@@ -13,9 +13,9 @@ webhooks:
     service:
       name: webhook-service
       namespace: system
-      path: /mutate-security-plural-sh-v1alpha1-oauthinjector
+      path: /mutate-platform-plural-sh-v1alpha1-affinityinjector
   failurePolicy: Fail
-  name: moauthinjector.security.plural.sh
+  name: maffinityinjector.platform.plural.sh
   rules:
   - apiGroups:
     - ""
@@ -34,9 +34,9 @@ webhooks:
     service:
       name: webhook-service
       namespace: system
-      path: /mutate-platform-plural-sh-v1alpha1-affinityinjector
+      path: /mutate-security-plural-sh-v1alpha1-oauthinjector
   failurePolicy: Fail
-  name: maffinityinjector.platform.plural.sh
+  name: moauthinjector.security.plural.sh
   rules:
   - apiGroups:
     - ""

@@ -7,120 +7,21 @@ metadata:
   name: manager-role
 rules:
 - apiGroups:
-  - platform.plural.sh
+  - ""
   resources:
-  - dashboards
+  - namespaces
   verbs:
-  - create
-  - delete
   - get
   - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - platform.plural.sh
-  resources:
-  - dashboards/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - platform.plural.sh
-  resources:
-  - dashboards/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - platform.plural.sh
-  resources:
-  - logfilters
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - platform.plural.sh
-  resources:
-  - logfilters/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - platform.plural.sh
-  resources:
-  - logfilters/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - platform.plural.sh
-  resources:
-  - proxies
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - platform.plural.sh
-  resources:
-  - proxies/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - platform.plural.sh
-  resources:
-  - proxies/status
-  verbs:
-  - get
-  - patch
-  - update
-- apiGroups:
-  - platform.plural.sh
-  resources:
-  - slashcommands
-  verbs:
-  - create
-  - delete
-  - get
-  - list
-  - patch
-  - update
-  - watch
-- apiGroups:
-  - platform.plural.sh
-  resources:
-  - slashcommands/finalizers
-  verbs:
-  - update
-- apiGroups:
-  - platform.plural.sh
-  resources:
-  - slashcommands/status
-  verbs:
-  - get
-  - patch
-  - update
 - apiGroups:
   - ""
   resources:
-  - pods
-  - namespaces
   - secrets
-  - serviceaccounts
   verbs:
+  - create
   - get
   - list
-  - create
+  - patch
   - update
   - watch
 - apiGroups:
@@ -130,13 +31,11 @@ rules:
   verbs:
   - get
   - list
-  - create
   - update
-  - watch
 - apiGroups:
-  - platform.plural.sh
+  - plaform.plural.sh.plural.sh
   resources:
-  - runbooks
+  - defaultstorageclasses
   verbs:
   - create
   - delete
@@ -146,11 +45,19 @@ rules:
   - update
   - watch
 - apiGroups:
-  - platform.plural.sh
+  - plaform.plural.sh.plural.sh
   resources:
-  - runbooks/status
+  - defaultstorageclasses/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - plaform.plural.sh.plural.sh
+  resources:
+  - defaultstorageclasses/status
   verbs:
   - get
+  - patch
+  - update
 - apiGroups:
   - platform.plural.sh
   resources:
@@ -166,13 +73,21 @@ rules:
 - apiGroups:
   - platform.plural.sh
   resources:
+  - secretsyncs/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - platform.plural.sh
+  resources:
   - secretsyncs/status
   verbs:
   - get
+  - patch
+  - update
 - apiGroups:
-  - monitoring.coreos.com
+  - platform.plural.sh
   resources:
-  - alertmanagerconfigs
+  - statefulsetresizes
   verbs:
   - create
   - delete
@@ -181,3 +96,17 @@ rules:
   - patch
   - update
   - watch
+- apiGroups:
+  - platform.plural.sh
+  resources:
+  - statefulsetresizes/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - platform.plural.sh
+  resources:
+  - statefulsetresizes/status
+  verbs:
+  - get
+  - patch
+  - update

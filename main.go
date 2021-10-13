@@ -216,9 +216,9 @@ func main() {
 			"/mutate-platform-plural-sh-v1alpha1-affinityinjector",
 			&webhook.Admission{
 				Handler: &platformv1alpha1.AffinityInjector{
-					Name:          "affinity-injector",
-					Log:           ctrl.Log.WithName("webhooks").WithName("affinity-injector"),
-					Client:        mgr.GetClient(),
+					Name:   "affinity-injector",
+					Log:    ctrl.Log.WithName("webhooks").WithName("affinity-injector"),
+					Client: mgr.GetClient(),
 				},
 			},
 		)
