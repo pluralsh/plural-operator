@@ -82,6 +82,7 @@ resources:
   domain: plural.sh
   group: platform
   kind: DefaultStorageClass
+  version: v1alpha1
 - api:
     crdVersion: v1
     namespaced: false
@@ -89,6 +90,15 @@ resources:
   domain: plural.sh
   group: platform
   kind: ResourceGroup
+  path: github.com/pluralsh/plural-operator/api/platform/v1alpha1
+  version: v1alpha1
+- api:
+    crdVersion: v1
+    namespaced: true
+  controller: true
+  domain: plural.sh
+  group: platform
+  kind: License
   path: github.com/pluralsh/plural-operator/api/platform/v1alpha1
   version: v1alpha1
 version: "3"

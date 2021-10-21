@@ -61,6 +61,32 @@ rules:
 - apiGroups:
   - platform.plural.sh
   resources:
+  - licenses
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - platform.plural.sh
+  resources:
+  - licenses/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - platform.plural.sh
+  resources:
+  - licenses/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - platform.plural.sh
+  resources:
   - resourcegroups
   verbs:
   - get

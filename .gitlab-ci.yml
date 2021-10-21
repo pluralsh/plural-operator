@@ -28,5 +28,5 @@ push-dkr:
   only:
   - main
   script:
-  - docker build -t dkr.plural.sh/bootstrap/plural-operator:v0.1.7 .
-  - docker push dkr.plural.sh/bootstrap/plural-operator:v0.1.7
+  - docker build -t dkr.plural.sh/bootstrap/plural-operator:v0.1.8 .
+  - docker push dkr.plural.sh/bootstrap/plural-operator:v0.1.8
