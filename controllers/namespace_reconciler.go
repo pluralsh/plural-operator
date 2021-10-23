@@ -73,9 +73,7 @@ func (r *NamespaceReconciler) Reconcile(ctx context.Context, req ctrl.Request) (
 	consoleAlerts := resources.AlertManagerConfig(
 		"console",
 		"http://console.console:4000/alertmanager",
-		map[string]string{
-			"severity": "critical",
-		},
+		map[string]string{},
 	)
 
 	for _, obj := range []*v1alpha1.AlertmanagerConfig{pluralAlerts, consoleAlerts} {
