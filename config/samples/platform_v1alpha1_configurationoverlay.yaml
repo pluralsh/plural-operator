@@ -1,0 +1,6 @@
+apiVersion: platform.plural.sh/v1alpha1
+kind: ConfigurationOverlay
+metadata:
+  name: configurationoverlay-sample
+spec:
+  # TODO(user): Add fields here

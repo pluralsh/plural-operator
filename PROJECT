@@ -77,7 +77,6 @@ resources:
   version: v1alpha1
 - api:
     crdVersion: v1
-    namespaced: false
   controller: true
   domain: plural.sh
   group: platform
@@ -85,7 +84,6 @@ resources:
   version: v1alpha1
 - api:
     crdVersion: v1
-    namespaced: false
   controller: true
   domain: plural.sh
   group: platform
@@ -99,6 +97,14 @@ resources:
   domain: plural.sh
   group: platform
   kind: License
+  path: github.com/pluralsh/plural-operator/api/platform/v1alpha1
+  version: v1alpha1
+- api:
+    crdVersion: v1
+    namespaced: true
+  domain: plural.sh
+  group: platform
+  kind: ConfigurationOverlay
   path: github.com/pluralsh/plural-operator/api/platform/v1alpha1
   version: v1alpha1
 version: "3"

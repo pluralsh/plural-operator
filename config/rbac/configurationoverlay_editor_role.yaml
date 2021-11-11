@@ -1,0 +1,24 @@
+# permissions for end users to edit configurationoverlays.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: configurationoverlay-editor-role
+rules:
+- apiGroups:
+  - platform.plural.sh
+  resources:
+  - configurationoverlays
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - platform.plural.sh
+  resources:
+  - configurationoverlays/status
+  verbs:
+  - get
