@@ -24,6 +24,12 @@ import (
 // +kubebuilder:validation:Enum=helm;terraform
 type ConfigurationType string
 
+// OverlayUpdate defines an update to perform for this update
+type OverlayUpdate struct {
+	// the path to update with
+	Path []string `json:"path"`
+}
+
 // ConfigurationOverlaySpec defines the desired state of ConfigurationOverlay
 type ConfigurationOverlaySpec struct {
 	// Name of the configuration input field
@@ -33,9 +39,10 @@ type ConfigurationOverlaySpec struct {
 	Documentation string `json:"documentation"`
 
 	// configuration path to update against 
-	Path []string `json:"path"`
+	Updates []OverlayUpdate `json:"updates"`
 
 	// type of configuration value
+	// +optional
 	Type ConfigurationType `json:"type"`
 }
 
