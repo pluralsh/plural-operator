@@ -24,6 +24,10 @@ import (
 // +kubebuilder:validation:Enum=helm;terraform
 type ConfigurationType string
 
+// the types of input values we accept
+// +kubebuilder:validation:Enum=string;enum;int
+type ConfigurationInputType string
+
 // OverlayUpdate defines an update to perform for this update
 type OverlayUpdate struct {
 	// the path to update with
@@ -40,6 +44,14 @@ type ConfigurationOverlaySpec struct {
 
 	// configuration path to update against 
 	Updates []OverlayUpdate `json:"updates"`
+
+	// the datatype for the value given to the input field
+	// +optional
+	InputType ConfigurationInputType `json:"inputType"`
+
+	// the values for enum input types
+	// +optional
+	InputValues []string `json:"inputValues"`
 
 	// type of configuration value
 	// +optional
