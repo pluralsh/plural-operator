@@ -50,7 +50,7 @@ type ConfigurationOverlaySpec struct {
 	// documentation for the specific field
 	Documentation string `json:"documentation"`
 
-	// configuration path to update against 
+	// configuration path to update against
 	Updates []OverlayUpdate `json:"updates"`
 
 	// the datatype for the value given to the input field
