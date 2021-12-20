@@ -1,0 +1,21 @@
+name: plural-ci
+
+on:
+  push:
+    branches: [ master ]
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: 'read'
+      id-token: 'write'
+    steps:
+    - uses: actions/checkout@v2
+    - name: Login to plural registry
+      uses: docker/login-action@v1
+      with:
+        registry: dkr.plural.sh
+        username: mjg@plural.sh
+        password: ${{ secrets.PLURAL_ACCESS_TOKEN }}
+    - run: docker build -t dkr.plural.sh/bootstrap/plural-operator:v0.2.0 .
+    - run: docker push dkr.plural.sh/bootstrap/plural-operator:v0.2.0

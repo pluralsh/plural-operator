@@ -39,6 +39,14 @@ type ConfigurationOverlaySpec struct {
 	// Name of the configuration input field
 	Name string `json:"name"`
 
+	// Top level folder this overlay should live in, default is "general"
+	// +optional
+	Folder string `json:"folder"`
+
+	// Subfolder this overlay lives in, default is "all"
+	// +optional
+	Subfolder string `json:"subfolder"`
+
 	// documentation for the specific field
 	Documentation string `json:"documentation"`
 
