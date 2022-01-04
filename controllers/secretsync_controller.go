@@ -91,6 +91,10 @@ func (r *SecretSyncReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 
 	meta := secret.ObjectMeta
 	log.Info(fmt.Sprintf("Attempting to apply secret %s/%s", req.NamespacedName.Namespace, meta.Name))
+	if secret.Annotations == nil {
+		secret.Annotations = map[string]string{}
+	}
+
 	annotations := secret.Annotations
 	delete(annotations, ownerAnnotation)
 	delete(annotations, ownedAnnotation)
