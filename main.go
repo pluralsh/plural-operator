@@ -112,6 +112,15 @@ func main() {
 		os.Exit(1)
 	}
 
+	if err = (&controllers.PodReconciler{
+		Client: mgr.GetClient(),
+		Log:    ctrl.Log.WithName("controllers").WithName("Pod"),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "Pod")
+		os.Exit(1)
+	}
+
 	if err = (&controllers.SecretSyncReconciler{
 		Client: mgr.GetClient(),
 		Log:    ctrl.Log.WithName("controllers").WithName("SecretSync"),
@@ -157,17 +166,6 @@ func main() {
 		os.Exit(1)
 	}
 
-	amr := &alertmanager.AlertmanagerReconciler{
-		Client: mgr.GetClient(),
-		Log:    ctrl.Log.WithName("controllers").WithName("Alertmanager"),
-		Scheme: mgr.GetScheme(),
-	}
-
-	if err := amr.SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "alertmanager")
-		os.Exit(1)
-	}
-
 	if err = (&controllers.StatefulSetResizeReconciler{
 		Client: mgr.GetClient(),
 		Log:    ctrl.Log.WithName("controllers").WithName("StatefulSetResize"),
@@ -192,7 +190,7 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "License")
 		os.Exit(1)
 	}
-	//+kubebuilder:scaffold:builder
+	// //+kubebuilder:scaffold:builder
 
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
 		setupLog.Error(err, "unable to set up health check")
@@ -205,6 +203,18 @@ func main() {
 
 	// add webhook handler for alertmanager
 	ctx := ctrl.SetupSignalHandler()
+
+	amr := &alertmanager.AlertmanagerReconciler{
+		Client: mgr.GetClient(),
+		Log:    ctrl.Log.WithName("controllers").WithName("Alertmanager"),
+		Scheme: mgr.GetScheme(),
+	}
+
+	if err := amr.SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "alertmanager")
+		os.Exit(1)
+	}
+
 	if err := mgr.AddMetricsExtraHandler("/webhook", alertmanager.AlertmanagerHandler(ctx, amr)); err != nil {
 		setupLog.Error(err, "unable to set up alertmanager webhook")
 		os.Exit(1)

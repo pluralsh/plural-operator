@@ -94,7 +94,7 @@ func (r *JobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 
 	if time.Now().Before(expiry) {
 		log.Info("Requeueing the job until after expiry")
-		return ctrl.Result{RequeueAfter: expiry.Sub(time.Now())}, nil
+		return ctrl.Result{RequeueAfter: time.Until(expiry)}, nil
 	}
 
 	if err := r.Delete(ctx, &job); err != nil {
