@@ -74,6 +74,13 @@ func (r *JobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
+	if job.Annotations != nil {
+		if _, ok := job.Annotations[ignoreAnnotation]; ok {
+			log.Info("Ignoring job due to annotation")
+			return ctrl.Result{}, nil
+		}
+	}
+
 	completion := job.Status.CompletionTime
 	meta := job.ObjectMeta
 

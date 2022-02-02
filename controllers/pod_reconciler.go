@@ -38,7 +38,7 @@ const (
 	expiryAnnotation = "platform.plural.sh/expire-after"
 )
 
-//+kubebuilder:rbac:groups="",resources=namespaces,verbs=get;list
+//+kubebuilder:rbac:groups="",resources=pods,verbs=get;list;delete
 
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
