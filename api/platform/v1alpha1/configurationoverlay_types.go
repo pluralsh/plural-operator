@@ -25,7 +25,7 @@ import (
 type ConfigurationType string
 
 // the types of input values we accept
-// +kubebuilder:validation:Enum=string;enum;int
+// +kubebuilder:validation:Enum=string;enum;int;list;bool
 type ConfigurationInputType string
 
 // OverlayUpdate defines an update to perform for this update
