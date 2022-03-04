@@ -32,6 +32,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
 	platformv1alpha1 "github.com/pluralsh/plural-operator/api/platform/v1alpha1"
 )
@@ -177,28 +178,28 @@ func (r *StatefulSetResizeReconciler) Reconcile(ctx context.Context, req ctrl.Re
 		}
 	}
 
-	if statefulset.Spec.Template.Annotations == nil {
-		statefulset.Spec.Template.Annotations = make(map[string]string)
+	// ensure CreationTimestamp and other computed meta-fields aren't present on create (will be refreshed if GET succeeds)
+	statefulset.ObjectMeta = metav1.ObjectMeta{
+		Name:        statefulset.Name,
+		Namespace:   statefulset.Namespace,
+		Labels:      statefulset.Labels,
+		Annotations: statefulset.Annotations,
 	}
 
-	newStatefulSet := &appsv1.StatefulSet{}
-	newStatefulSet.Spec = statefulset.Spec
-	newStatefulSet.Spec.VolumeClaimTemplates = newClaims
-	newStatefulSet.Name = statefulset.Name
-	newStatefulSet.Namespace = statefulset.Namespace
-	newStatefulSet.Labels = statefulset.Labels
-	newStatefulSet.Annotations = statefulset.Annotations
-	if newStatefulSet.Spec.Template.Annotations == nil {
-		newStatefulSet.Spec.Template.Annotations = map[string]string{}
-	}
+	if _, err := controllerutil.CreateOrUpdate(ctx, r.Client, &statefulset, func() error {
+		statefulset.Spec.VolumeClaimTemplates = newClaims
+		if statefulset.Spec.Template.Annotations == nil {
+			statefulset.Spec.Template.Annotations = map[string]string{}
+		}
 
-	newStatefulSet.Spec.Template.Annotations["platform.plural.sh/rotate"] = time.Now().String()
-	if err := r.Create(ctx, newStatefulSet); err != nil {
-		log.Error(err, "failed to recreate statefulset", "statefulset", newStatefulSet.Name)
+		statefulset.Spec.Template.Annotations["platform.plural.sh/rotate"] = time.Now().String()
+		return nil
+	}); err != nil {
+		log.Error(err, "Failed to refresh statefulset")
 		return ctrl.Result{}, err
 	}
 
-	log.Info("Successfully resized pvc for statefulset", "statefulset", newStatefulSet.Name)
+	log.Info("Successfully resized pvc for statefulset", "statefulset", statefulset.Name)
 	return r.cleanup(ctx, &resize)
 }
 

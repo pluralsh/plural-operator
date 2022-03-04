@@ -31,6 +31,10 @@ type StatefulSetResizeSpec struct {
 
 	// Size you want to set it to
 	Size string `json:"size,omitempty"`
+
+	// force completion even if a recreation of the statefulset fails (useful for some operator interactions)
+	// +optional
+	Force bool `json:"force"`
 }
 
 // StatefulSetResizeStatus defines the observed state of StatefulSetResize

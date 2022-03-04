@@ -91,6 +91,10 @@ type StatefulsetResize struct {
 
 	// the value to use from the args for the execution
 	ValueFrom string `json:"valueFrom"`
+
+	// force completion even if a recreation of the statefulset fails (useful for some operator interactions)
+	// +optional
+	Force bool `json:"force"`
 }
 
 // A representation of a plural configuration update

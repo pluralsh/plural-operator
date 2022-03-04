@@ -17,5 +17,5 @@ jobs:
         registry: dkr.plural.sh
         username: mjg@plural.sh
         password: ${{ secrets.PLURAL_ACCESS_TOKEN }}
-    - run: docker build -t dkr.plural.sh/bootstrap/plural-operator:v0.3.0 .
-    - run: docker push dkr.plural.sh/bootstrap/plural-operator:v0.3.0
+    - run: docker build -t dkr.plural.sh/bootstrap/plural-operator:v0.3.1 .
+    - run: docker push dkr.plural.sh/bootstrap/plural-operator:v0.3.1

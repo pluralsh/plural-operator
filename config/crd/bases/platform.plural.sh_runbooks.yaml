@@ -57,6 +57,11 @@ spec:
                           items:
                             description: details for any statefulset resizes to apply
                             properties:
+                              force:
+                                description: force completion even if a recreation
+                                  of the statefulset fails (useful for some operator
+                                  interactions)
+                                type: boolean
                               name:
                                 description: name of statefulset
                                 type: string

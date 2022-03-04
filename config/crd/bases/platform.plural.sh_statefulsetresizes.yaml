@@ -36,6 +36,10 @@ spec:
           spec:
             description: StatefulSetResizeSpec defines the desired state of StatefulSetResize
             properties:
+              force:
+                description: force completion even if a recreation of the statefulset
+                  fails (useful for some operator interactions)
+                type: boolean
               name:
                 description: Name of the stateful set
                 type: string
