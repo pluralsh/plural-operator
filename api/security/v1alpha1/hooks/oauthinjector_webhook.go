@@ -41,6 +41,10 @@ type Config struct {
 	Containers []corev1.Container `yaml:"containers"`
 }
 
+const (
+	htpasswdVolumeName = "htpasswd-secret"
+)
+
 // OidcInjector adds an OAuth2-Proxy sidecar to every incoming pods.
 func (oi *OAuthInjector) Handle(ctx context.Context, req admission.Request) admission.Response {
 	log := oi.Log.WithValues("webhook", req.AdmissionRequest.Name)
@@ -67,6 +71,19 @@ func (oi *OAuthInjector) Handle(ctx context.Context, req admission.Request) admi
 	sidecarConfig := &Config{}
 	sidecarConfig = oi.SidecarConfig
 	sidecarConfig.Containers[0].EnvFrom = *secretRef
+
+	httpwd, ok := pod.Annotations["security.plural.sh/htpasswd-secret"]
+	if ok {
+		volume := corev1.Volume{Name: htpasswdVolumeName}
+		volume.Secret = &corev1.SecretVolumeSource{SecretName: httpwd}
+		pod.Spec.Volumes = append(pod.Spec.Volumes, volume)
+
+		container := sidecarConfig.Containers[0]
+		container.VolumeMounts = append(container.VolumeMounts, corev1.VolumeMount{
+			MountPath: "/etc/plural",
+			Name:      htpasswdVolumeName,
+		})
+	}
 
 	pod.Spec.Containers = append(pod.Spec.Containers, sidecarConfig.Containers...)
 
