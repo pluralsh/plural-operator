@@ -19,6 +19,7 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"reflect"
 	"strings"
 	"time"
 
@@ -26,6 +27,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
@@ -112,6 +114,20 @@ func (r *SecretReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	return ctrl.Result{}, nil
 }
 
+func (r *SecretReconciler) isSyncNecessary(ctx context.Context, secret *corev1.Secret, ns *corev1.Namespace) bool {
+	var target corev1.Secret
+	namespacedName := types.NamespacedName{
+		Namespace: ns.Name,
+		Name:      secret.Name,
+	}
+	if err := r.Get(ctx, namespacedName, &target); err != nil {
+		r.Log.Info("No target sync found, sync is required")
+		return true
+	}
+
+	return !reflect.DeepEqual(target.Data, secret.Data)
+}
+
 func (r *SecretReconciler) syncSecret(ctx context.Context, secret *corev1.Secret, ns *corev1.Namespace) error {
 	log := r.Log.WithValues("namespace", secret.Namespace)
 	labels := secret.Labels
@@ -129,6 +145,11 @@ func (r *SecretReconciler) syncSecret(ctx context.Context, secret *corev1.Secret
 			"type": secret.Type,
 			"data": secret.Data,
 		},
+	}
+
+	if !r.isSyncNecessary(ctx, secret, ns) {
+		log.Info("Secret already synced to namespace")
+		return nil
 	}
 
 	if err := r.Patch(ctx, newSecret, client.Apply, client.ForceOwnership, client.FieldOwner("plural-operator")); err != nil {
