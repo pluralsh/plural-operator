@@ -19,6 +19,7 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"reflect"
 	"strings"
 
 	"github.com/go-logr/logr"
@@ -95,6 +96,11 @@ func (r *SecretSyncReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 		secret.Annotations = map[string]string{}
 	}
 
+	if !r.isSyncNecessary(ctx, &secret, &sync) {
+		log.Info("Secret already exists in target namespace and is correctly formed")
+		return ctrl.Result{}, nil
+	}
+
 	annotations := secret.Annotations
 	delete(annotations, ownerAnnotation)
 	delete(annotations, ownedAnnotation)
@@ -124,6 +130,20 @@ func (r *SecretSyncReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 	}
 
 	return ctrl.Result{}, nil
+}
+
+func (r *SecretSyncReconciler) isSyncNecessary(ctx context.Context, secret *corev1.Secret, sync *platformv1alpha1.SecretSync) bool {
+	var target corev1.Secret
+	namespacedName := types.NamespacedName{
+		Namespace: sync.Namespace,
+		Name:      secret.Name,
+	}
+	if err := r.Get(ctx, namespacedName, &target); err != nil {
+		r.Log.Info("No target sync found, sync is required")
+		return true
+	}
+
+	return !reflect.DeepEqual(target.Data, secret.Data)
 }
 
 // SetupWithManager sets up the controller with the Manager.
