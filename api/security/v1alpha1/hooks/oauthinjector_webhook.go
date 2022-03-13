@@ -78,13 +78,13 @@ func (oi *OAuthInjector) Handle(ctx context.Context, req admission.Request) admi
 		volume.Secret = &corev1.SecretVolumeSource{SecretName: httpwd}
 		pod.Spec.Volumes = append(pod.Spec.Volumes, volume)
 
-		container := sidecarConfig.Containers[0]
-		container.VolumeMounts = append(container.VolumeMounts, corev1.VolumeMount{
+		sidecarConfig.Containers[0].VolumeMounts = append(sidecarConfig.Containers[0].VolumeMounts, corev1.VolumeMount{
 			MountPath: "/etc/plural",
 			Name:      htpasswdVolumeName,
 		})
 	}
 
+	log.Info("Injecting container: ", "container", sidecarConfig.Containers[0])
 	pod.Spec.Containers = append(pod.Spec.Containers, sidecarConfig.Containers...)
 
 	log.Info("Sidecar ", oi.Name, " injected.")
