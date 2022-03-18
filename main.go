@@ -17,16 +17,12 @@ limitations under the License.
 package main
 
 import (
-	"crypto/sha256"
 	"flag"
-	"io/ioutil"
 	"os"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
-	"k8s.io/klog"
-	"sigs.k8s.io/yaml"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -60,21 +56,6 @@ func init() {
 
 	utilruntime.Must(amv1alpha1.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
-}
-
-func loadConfig(configFile string) (*securityhooks.Config, error) {
-	data, err := ioutil.ReadFile(configFile)
-	if err != nil {
-		return nil, err
-	}
-	klog.Infof("New configuration: sha256sum %x", sha256.Sum256(data))
-
-	var cfg securityhooks.Config
-	if err := yaml.Unmarshal(data, &cfg); err != nil {
-		return nil, err
-	}
-
-	return &cfg, nil
 }
 
 func main() {
@@ -222,20 +203,14 @@ func main() {
 
 	// Setup oauth injector mutating webhook
 	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
-		config, err := loadConfig(oauthSidecarConfig)
-		if err != nil {
-			setupLog.Error(err, "unable to load oauth injector config")
-			os.Exit(1)
-		}
-
 		mgr.GetWebhookServer().Register(
 			"/mutate-security-plural-sh-v1alpha1-oauthinjector",
 			&webhook.Admission{
 				Handler: &securityhooks.OAuthInjector{
-					Name:          "oauth2-proxy",
-					Log:           ctrl.Log.WithName("webhooks").WithName("oauth-injector"),
-					Client:        mgr.GetClient(),
-					SidecarConfig: config,
+					Name:       "oauth2-proxy",
+					Log:        ctrl.Log.WithName("webhooks").WithName("oauth-injector"),
+					Client:     mgr.GetClient(),
+					ConfigPath: oauthSidecarConfig,
 				},
 			},
 		)

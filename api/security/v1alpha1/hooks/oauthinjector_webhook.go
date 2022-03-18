@@ -19,7 +19,9 @@ package hooks
 import (
 	"context"
 	"encoding/json"
+	"io/ioutil"
 	"net/http"
+	"sigs.k8s.io/yaml"
 
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
@@ -30,11 +32,11 @@ import (
 //+kubebuilder:webhook:path=/mutate-security-plural-sh-v1alpha1-oauthinjector,mutating=true,failurePolicy=fail,sideEffects=None,groups="",resources=pods,verbs=create;update,versions=v1,name=moauthinjector.security.plural.sh,admissionReviewVersions={v1,v1beta1}
 
 type OAuthInjector struct {
-	Name          string
-	Client        client.Client
-	Log           logr.Logger
-	decoder       *admission.Decoder
-	SidecarConfig *Config
+	Name       string
+	Client     client.Client
+	Log        logr.Logger
+	decoder    *admission.Decoder
+	ConfigPath string
 }
 
 type Config struct {
@@ -68,8 +70,11 @@ func (oi *OAuthInjector) Handle(ctx context.Context, req admission.Request) admi
 		},
 	}
 
-	sidecarConfig := &Config{}
-	sidecarConfig = oi.SidecarConfig
+	sidecarConfig, err := loadConfig(oi.ConfigPath)
+	if err != nil {
+		log.Info("Could not read sidecar config")
+		return admission.Errored(http.StatusBadRequest, err)
+	}
 	sidecarConfig.Containers[0].EnvFrom = *secretRef
 
 	httpwd, ok := pod.Annotations["security.plural.sh/htpasswd-secret"]
@@ -105,4 +110,18 @@ func (oi *OAuthInjector) Handle(ctx context.Context, req admission.Request) admi
 func (oi *OAuthInjector) InjectDecoder(d *admission.Decoder) error {
 	oi.decoder = d
 	return nil
+}
+
+func loadConfig(configFile string) (*Config, error) {
+	data, err := ioutil.ReadFile(configFile)
+	if err != nil {
+		return nil, err
+	}
+
+	var cfg Config
+	if err := yaml.Unmarshal(data, &cfg); err != nil {
+		return nil, err
+	}
+
+	return &cfg, nil
 }
