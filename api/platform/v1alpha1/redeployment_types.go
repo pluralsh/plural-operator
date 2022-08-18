@@ -20,8 +20,14 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
+const (
+	DaemonSet   WorkflowType = "daemonset"
+	Deployment  WorkflowType = "deployment"
+	StatefulSet WorkflowType = "statefulset"
+)
+
 // the types of Kubernetes workloads
-// +kubebuilder:validation:Enum=daemonsets;deployments;statefulsets
+// +kubebuilder:validation:Enum=daemonset;deployment;statefulset
 type WorkflowType string
 
 // RedeploymentStatus defines the observed state of Redeployment

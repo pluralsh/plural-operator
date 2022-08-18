@@ -47,9 +47,9 @@ spec:
                 description: 'The Kubernetes workflow type: DaemonSets, Deployments,
                   StatefulSets'
                 enum:
-                - daemonsets
-                - deployments
-                - statefulsets
+                - daemonset
+                - deployment
+                - statefulset
                 type: string
             required:
             - name
