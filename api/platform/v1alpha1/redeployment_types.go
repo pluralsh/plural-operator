@@ -21,13 +21,13 @@ import (
 )
 
 const (
-	DaemonSets   WorkflowType = "daemonsets"
-	Deployments  WorkflowType = "deployments"
-	StatefulSets WorkflowType = "statefulsets"
+	DaemonSet   WorkflowType = "daemonset"
+	Deployment  WorkflowType = "deployment"
+	StatefulSet WorkflowType = "statefulset"
 )
 
 // the types of Kubernetes workloads
-// +kubebuilder:validation:Enum=daemonsets;deployments;statefulsets
+// +kubebuilder:validation:Enum=daemonset;deployment;statefulset
 type WorkflowType string
 
 // RedeploymentStatus defines the observed state of Redeployment
