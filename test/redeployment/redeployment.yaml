@@ -1,0 +1,8 @@
+apiVersion: "platform.plural.sh/v1alpha1"
+kind: Redeployment
+metadata:
+  name: demo-app-redeployment
+spec:
+  name: demo-app
+  namespace: demo-app
+  workflow: deployments
