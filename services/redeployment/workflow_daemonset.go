@@ -21,7 +21,7 @@ type daemonSetWorkflow struct {
 func (d *daemonSetWorkflow) IsUsed(resource Resource, namespace string, name string) bool {
 	for _, daemonSet := range d.daemonSets.Items {
 		for _, volume := range daemonSet.Spec.Template.Spec.Volumes {
-			if isUsing(volume, daemonSet.Namespace, resource, namespace, name) {
+			if isUsed(volume, daemonSet.Namespace, resource, namespace, name) {
 				return true
 			}
 		}

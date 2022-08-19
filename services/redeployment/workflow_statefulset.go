@@ -21,7 +21,7 @@ type statefulSetWorkflow struct {
 func (d *statefulSetWorkflow) IsUsed(resource Resource, namespace string, name string) bool {
 	for _, statefulSet := range d.statefulSets.Items {
 		for _, volume := range statefulSet.Spec.Template.Spec.Volumes {
-			if isUsing(volume, statefulSet.Namespace, resource, namespace, name) {
+			if isUsed(volume, statefulSet.Namespace, resource, namespace, name) {
 				return true
 			}
 		}

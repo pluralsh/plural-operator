@@ -9,7 +9,7 @@ import (
 	"github.com/pluralsh/plural-operator/api/platform/v1alpha1"
 )
 
-func isUsing(volume corev1.Volume, workflowResourceNamespace string, resource Resource, namespace string, name string) bool {
+func isUsed(volume corev1.Volume, workflowResourceNamespace string, resource Resource, namespace string, name string) bool {
 	switch resource {
 	case ResourceConfigMap:
 		return volume.ConfigMap != nil && volume.ConfigMap.Name == name && workflowResourceNamespace == namespace

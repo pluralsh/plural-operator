@@ -21,7 +21,7 @@ type deploymentWorkflow struct {
 func (d *deploymentWorkflow) IsUsed(resource Resource, namespace string, name string) bool {
 	for _, deployment := range d.deployments.Items {
 		for _, volume := range deployment.Spec.Template.Spec.Volumes {
-			if isUsing(volume, deployment.Namespace, resource, namespace, name) {
+			if isUsed(volume, deployment.Namespace, resource, namespace, name) {
 				return true
 			}
 		}

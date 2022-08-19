@@ -17,8 +17,9 @@ type configMapService struct {
 	configMap *corev1.ConfigMap
 	ctx       context.Context
 
-	workflowMap   map[v1alpha1.WorkflowType]Workflow
-	redeployments []v1alpha1.Redeployment
+	workflowMap           map[v1alpha1.WorkflowType]Workflow
+	redeployments         []v1alpha1.Redeployment
+	matchingRedeployments []v1alpha1.Redeployment
 }
 
 // IsControlled implements Service.IsControlled interface.
@@ -62,13 +63,16 @@ func (c *configMapService) ShouldRestart() bool {
 
 // RolloutRestart implements Service.RolloutRestart interface.
 func (c *configMapService) RolloutRestart() error {
-	for _, redeployment := range c.redeployments {
+	for _, redeployment := range c.matchingRedeployments {
 		workflow, exists := c.workflowMap[redeployment.Spec.Workflow]
 		if !exists {
 			return nil
 		}
 
-		return workflow.RolloutRestart(&redeployment)
+		err := workflow.RolloutRestart(&redeployment)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -116,7 +120,7 @@ func (c *configMapService) isControlled(redeployment *v1alpha1.Redeployment) (co
 	}
 
 	if workflow.IsUsed(ResourceConfigMap, c.configMap.Namespace, c.configMap.Name) {
-		c.redeployments = append(c.redeployments, *redeployment)
+		c.matchingRedeployments = append(c.matchingRedeployments, *redeployment)
 		controlled = true
 	}
 
@@ -125,6 +129,8 @@ func (c *configMapService) isControlled(redeployment *v1alpha1.Redeployment) (co
 
 func (c *configMapService) init() error {
 	c.workflowMap = make(map[v1alpha1.WorkflowType]Workflow, 0)
+	c.matchingRedeployments = make([]v1alpha1.Redeployment, 0)
+
 	redeployments, err := getRedeployments(c.ctx, c.client, c.configMap.Namespace)
 	if err != nil {
 		return err

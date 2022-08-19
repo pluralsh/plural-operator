@@ -17,8 +17,9 @@ type secretService struct {
 	secret *corev1.Secret
 	ctx    context.Context
 
-	workflowMap   map[v1alpha1.WorkflowType]Workflow
-	redeployments []v1alpha1.Redeployment
+	workflowMap           map[v1alpha1.WorkflowType]Workflow
+	redeployments         []v1alpha1.Redeployment
+	matchingRedeployments []v1alpha1.Redeployment
 }
 
 func (s *secretService) isControlled(redeployment *v1alpha1.Redeployment) (controlled bool, err error) {
@@ -35,7 +36,7 @@ func (s *secretService) isControlled(redeployment *v1alpha1.Redeployment) (contr
 	}
 
 	if workflow.IsUsed(ResourceSecret, s.secret.Namespace, s.secret.Name) {
-		s.redeployments = append(s.redeployments, *redeployment)
+		s.matchingRedeployments = append(s.matchingRedeployments, *redeployment)
 		controlled = true
 	}
 
@@ -78,13 +79,16 @@ func (s *secretService) ShouldRestart() bool {
 }
 
 func (s *secretService) RolloutRestart() error {
-	for _, redeployment := range s.redeployments {
-		workflowService, exists := s.workflowMap[redeployment.Spec.Workflow]
+	for _, redeployment := range s.matchingRedeployments {
+		workflow, exists := s.workflowMap[redeployment.Spec.Workflow]
 		if !exists {
 			return nil
 		}
 
-		return workflowService.RolloutRestart(&redeployment)
+		err := workflow.RolloutRestart(&redeployment)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -109,6 +113,8 @@ func (s *secretService) getSHA() string {
 
 func (s *secretService) init() error {
 	s.workflowMap = make(map[v1alpha1.WorkflowType]Workflow, 0)
+	s.matchingRedeployments = make([]v1alpha1.Redeployment, 0)
+
 	redeployments, err := getRedeployments(s.ctx, s.client, s.secret.Namespace)
 	if err != nil {
 		return err
