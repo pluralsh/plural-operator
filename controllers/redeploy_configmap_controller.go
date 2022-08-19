@@ -35,7 +35,11 @@ func (c *ConfigMapRedeployReconciler) Reconcile(ctx context.Context, req ctrl.Re
 		return reconcile.Result{}, fmt.Errorf("could not fetch ConfigMap: %+v", err)
 	}
 
-	svc := redeployment.NewFactory().Create(redeployment.ResourceConfigMap, c.Client, configMap)
+	svc, err := redeployment.NewFactory().Create(redeployment.ResourceConfigMap, c.Client, configMap)
+	if err != nil {
+		return reconcile.Result{}, fmt.Errorf("could not create redeployment service: %+v", err)
+	}
+
 	controlled, err := svc.IsControlled()
 	if err != nil {
 		return reconcile.Result{}, fmt.Errorf("could not check if config map is controlled by any application: %+v", err)

@@ -5,6 +5,8 @@ import (
 
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/pluralsh/plural-operator/api/platform/v1alpha1"
 )
 
 type secretService struct {
@@ -43,10 +45,21 @@ func (s *secretService) getSHA() string {
 	panic("implement me")
 }
 
-func newSecretService(client client.Client, secret *corev1.Secret) Service {
+func (s *secretService) isControlled(redeployment *v1alpha1.Redeployment) (bool, error) {
+	//TODO implement me
+	panic("implement me")
+}
+
+func (c *secretService) init() error {
+	//TODO implement me
+	panic("implement me")
+}
+
+func newSecretService(client client.Client, secret *corev1.Secret) (Service, error) {
 	if secret.Annotations == nil {
 		secret.Annotations = map[string]string{}
 	}
 
-	return &secretService{client: client, secret: secret, ctx: context.Background()}
+	svc := &secretService{client: client, secret: secret, ctx: context.Background()}
+	return svc, svc.init()
 }

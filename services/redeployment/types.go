@@ -20,11 +20,11 @@ const (
 )
 
 type IFactory interface {
-	Create(resource Resource, client client.Client, object client.Object) Service
+	Create(resource Resource, client client.Client, object client.Object) (Service, error)
 }
 
 type WorkflowFactory interface {
-	Create(client client.Client, workflow v1alpha1.Redeployment) (Workflow, error)
+	Create(client client.Client, workflow *v1alpha1.Redeployment) (Workflow, error)
 }
 
 // Service is a redeployment operator service that simplifies the process of
@@ -58,13 +58,16 @@ type Service interface {
 
 	// getSHA calculates the SHA of the Resource data.
 	getSHA() string
+
+	// isControlled TODO
+	isControlled(redeployment *v1alpha1.Redeployment) (bool, error)
 }
 
 // Workflow TODO
 type Workflow interface {
-	// IsUsing checks if v1alpha1.WorkflowType is using a Resource
-	// based on the volumes attached to that v1alpha1.WorkflowType.
-	IsUsing(resource Resource, namespace string, name string) bool
+	// IsUsed checks if provided Resource is used by the v1alpha1.WorkflowType
+	// based on the volumes attached to that v1alpha1.WorkflowType resource.
+	IsUsed(resource Resource, namespace string, name string) bool
 
 	// RolloutRestart TODO
 	RolloutRestart(redeployment *v1alpha1.Redeployment) error

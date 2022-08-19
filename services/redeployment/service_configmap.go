@@ -23,31 +23,19 @@ type configMapService struct {
 
 // IsControlled implements Service.IsControlled interface.
 func (c *configMapService) IsControlled() (bool, error) {
-	redeployments, err := getRedeployments(c.ctx, c.client, c.configMap.Namespace)
-	if err != nil {
-		return false, err
-	}
-
-	for _, redeployment := range redeployments {
-		workflowType := redeployment.Spec.Workflow
-		workflowService, exists := c.workflowMap[workflowType]
-
-		if !exists {
-			workflowService, err = newWorkflowFactory().Create(c.client, redeployment)
-			if err != nil {
-				return false, err
-			}
-
-			c.workflowMap[workflowType] = workflowService
+	result := false
+	for _, redeployment := range c.redeployments {
+		controlled, err := c.isControlled(&redeployment)
+		if err != nil {
+			return false, err
 		}
 
-		if workflowService.IsUsing(ResourceConfigMap, c.configMap.Namespace, c.configMap.Name) {
-			c.redeployments = append(c.redeployments, redeployment)
-			return true, nil
+		if controlled {
+			result = true
 		}
 	}
 
-	return false, nil
+	return result, nil
 }
 
 // HasAnnotation implements Service.HasAnnotation interface.
@@ -114,18 +102,43 @@ func (c *configMapService) getSHA() string {
 	return hex.EncodeToString(sha.Sum(nil))
 }
 
-func (c *configMapService) init() {
-	c.workflowMap = make(map[v1alpha1.WorkflowType]Workflow, 0)
-	c.redeployments = make([]v1alpha1.Redeployment, 0)
+func (c *configMapService) isControlled(redeployment *v1alpha1.Redeployment) (controlled bool, err error) {
+	workflowType := redeployment.Spec.Workflow
+	workflowService, exists := c.workflowMap[workflowType]
+
+	if !exists {
+		workflowService, err = newWorkflowFactory().Create(c.client, redeployment)
+		if err != nil {
+			return false, err
+		}
+
+		c.workflowMap[workflowType] = workflowService
+	}
+
+	if workflowService.IsUsed(ResourceConfigMap, c.configMap.Namespace, c.configMap.Name) {
+		c.redeployments = append(c.redeployments, *redeployment)
+		controlled = true
+	}
+
+	return controlled, err
 }
 
-func newConfigMapService(client client.Client, configMap *corev1.ConfigMap) Service {
+func (c *configMapService) init() error {
+	c.workflowMap = make(map[v1alpha1.WorkflowType]Workflow, 0)
+	redeployments, err := getRedeployments(c.ctx, c.client, c.configMap.Namespace)
+	if err != nil {
+		return err
+	}
+
+	c.redeployments = redeployments
+	return nil
+}
+
+func newConfigMapService(client client.Client, configMap *corev1.ConfigMap) (Service, error) {
 	if configMap.Annotations == nil {
 		configMap.Annotations = map[string]string{}
 	}
 
 	svc := &configMapService{client: client, configMap: configMap, ctx: context.Background()}
-	svc.init()
-
-	return svc
+	return svc, svc.init()
 }

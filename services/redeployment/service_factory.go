@@ -9,7 +9,7 @@ import (
 
 type defaultFactory struct{}
 
-func (f *defaultFactory) Create(resource Resource, client client.Client, object client.Object) Service {
+func (f *defaultFactory) Create(resource Resource, client client.Client, object client.Object) (Service, error) {
 	switch resource {
 	case ResourceConfigMap:
 		configMap := object.(*corev1.ConfigMap)

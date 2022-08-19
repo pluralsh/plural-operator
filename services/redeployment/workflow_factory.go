@@ -10,7 +10,7 @@ import (
 
 type defaultWorkflowFactory struct{}
 
-func (w *defaultWorkflowFactory) Create(client client.Client, redeployment v1alpha1.Redeployment) (Workflow, error) {
+func (w *defaultWorkflowFactory) Create(client client.Client, redeployment *v1alpha1.Redeployment) (Workflow, error) {
 	switch redeployment.Spec.Workflow {
 	case v1alpha1.Deployment:
 		return newDeploymentWorkflow(client, redeployment.Spec.Namespace)
