@@ -55,13 +55,16 @@ func (c *ConfigMapRedeployReconciler) Reconcile(ctx context.Context, req ctrl.Re
 	}
 
 	if svc.ShouldRestart() {
+		log.Info("initiating a rollout restart")
+		err = svc.RolloutRestart()
+		if err != nil {
+			return reconcile.Result{}, fmt.Errorf("could not initiate a rollout restart: %+v", err)
+		}
+
 		err = svc.UpdateAnnotation()
 		if err != nil {
 			return reconcile.Result{}, fmt.Errorf("could not update annotation: %+v", err)
 		}
-
-		log.Info("starting a rollout restart")
-		return reconcile.Result{}, svc.RolloutRestart()
 	}
 
 	return ctrl.Result{}, nil
