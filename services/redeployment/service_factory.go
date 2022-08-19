@@ -7,9 +7,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-type defaultFactory struct{}
-
-func (f *defaultFactory) Create(resource Resource, client client.Client, object client.Object) (Service, error) {
+func NewService(resource Resource, client client.Client, object client.Object) (Service, error) {
 	switch resource {
 	case ResourceConfigMap:
 		configMap := object.(*corev1.ConfigMap)
@@ -20,8 +18,4 @@ func (f *defaultFactory) Create(resource Resource, client client.Client, object 
 	}
 
 	panic(fmt.Sprintf("unsupported resource found: %s", resource))
-}
-
-func NewFactory() Factory {
-	return &defaultFactory{}
 }

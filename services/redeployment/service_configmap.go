@@ -63,12 +63,12 @@ func (c *configMapService) ShouldRestart() bool {
 // RolloutRestart implements Service.RolloutRestart interface.
 func (c *configMapService) RolloutRestart() error {
 	for _, redeployment := range c.redeployments {
-		workflowService, exists := c.workflowMap[redeployment.Spec.Workflow]
+		workflow, exists := c.workflowMap[redeployment.Spec.Workflow]
 		if !exists {
 			return nil
 		}
 
-		return workflowService.RolloutRestart(&redeployment)
+		return workflow.RolloutRestart(&redeployment)
 	}
 
 	return nil
@@ -104,18 +104,18 @@ func (c *configMapService) getSHA() string {
 
 func (c *configMapService) isControlled(redeployment *v1alpha1.Redeployment) (controlled bool, err error) {
 	workflowType := redeployment.Spec.Workflow
-	workflowService, exists := c.workflowMap[workflowType]
+	workflow, exists := c.workflowMap[workflowType]
 
 	if !exists {
-		workflowService, err = newWorkflowFactory().Create(c.client, redeployment)
+		workflow, err = newWorkflow(c.client, redeployment)
 		if err != nil {
 			return false, err
 		}
 
-		c.workflowMap[workflowType] = workflowService
+		c.workflowMap[workflowType] = workflow
 	}
 
-	if workflowService.IsUsed(ResourceConfigMap, c.configMap.Namespace, c.configMap.Name) {
+	if workflow.IsUsed(ResourceConfigMap, c.configMap.Namespace, c.configMap.Name) {
 		c.redeployments = append(c.redeployments, *redeployment)
 		controlled = true
 	}

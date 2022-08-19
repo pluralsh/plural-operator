@@ -1,8 +1,6 @@
 package redeployment
 
 import (
-	"sigs.k8s.io/controller-runtime/pkg/client"
-
 	"github.com/pluralsh/plural-operator/api/platform/v1alpha1"
 )
 
@@ -18,14 +16,6 @@ const (
 	shaAnnotation     = "platform.plural.sh/sha"
 	restartAnnotation = "kubectl.kubernetes.io/restartedAt"
 )
-
-type Factory interface {
-	Create(resource Resource, client client.Client, object client.Object) (Service, error)
-}
-
-type WorkflowFactory interface {
-	Create(client client.Client, workflow *v1alpha1.Redeployment) (Workflow, error)
-}
 
 // Service is a redeployment operator service that simplifies the process of
 // finding the application that uses a Resource and triggering a rollout restart
