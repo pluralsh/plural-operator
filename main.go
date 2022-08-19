@@ -175,7 +175,15 @@ func main() {
 		Scheme: mgr.GetScheme(),
 		Log:    ctrl.Log.WithName("controllers").WithName("ConfigMapRedeploy"),
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "License")
+		setupLog.Error(err, "unable to create controller", "controller", "ConfigMapRedeploy")
+		os.Exit(1)
+	}
+	if err = (&controllers.RedeploySecretReconciler{
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
+		Log:    ctrl.Log.WithName("controllers").WithName("SecretRedeploy"),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "SecretRedeploy")
 		os.Exit(1)
 	}
 	// //+kubebuilder:scaffold:builder

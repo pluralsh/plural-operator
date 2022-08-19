@@ -16,3 +16,13 @@ data:
     color.good=purple
     color.bad=yellow
     allow.textmode=true   
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: demo-app-secret
+  namespace: demo-app
+data:
+  password: TXEyRCMoOGdmMDk=
+  username: cm9vdA==

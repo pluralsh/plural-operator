@@ -12,9 +12,9 @@ import (
 func isUsing(volume corev1.Volume, workflowResourceNamespace string, resource Resource, namespace string, name string) bool {
 	switch resource {
 	case ResourceConfigMap:
-		return volume.ConfigMap.Name == name && workflowResourceNamespace == namespace
+		return volume.ConfigMap != nil && volume.ConfigMap.Name == name && workflowResourceNamespace == namespace
 	case ResourceSecret:
-		return volume.Secret.SecretName == name && workflowResourceNamespace == namespace
+		return volume.Secret != nil && volume.Secret.SecretName == name && workflowResourceNamespace == namespace
 	}
 
 	return false

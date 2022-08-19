@@ -18,17 +18,14 @@ package controllers
 
 import (
 	"context"
-	"crypto/sha256"
-	"encoding/hex"
-	"time"
-
+	"fmt"
 	"github.com/go-logr/logr"
-	platformv1alpha1 "github.com/pluralsh/plural-operator/api/platform/v1alpha1"
-	appsv1 "k8s.io/api/apps/v1"
+	"github.com/pluralsh/plural-operator/services/redeployment"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
 // RedeploySecretReconciler reconciles a Secret object for specified applications
@@ -56,82 +53,38 @@ func (r *RedeploySecretReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	redeployments, err := r.getRedeploymentApplications(ctx, secret.Namespace)
+	svc, err := redeployment.NewService(redeployment.ResourceSecret, r.Client, secret)
 	if err != nil {
-		log.Error(err, "Failed to get redeployments")
-		return ctrl.Result{}, err
+		return reconcile.Result{}, fmt.Errorf("could not create redeployment service: %+v", err)
+	}
+	controlled, err := svc.IsControlled()
+	if err != nil {
+		return reconcile.Result{}, fmt.Errorf("could not check if secret is controlled by any application: %w", err)
 	}
 
-	deployments, err := r.getDeploymentsForSecret(ctx, redeployments, secret)
-	if err != nil {
-		log.Error(err, "Failed to get deployment for secret")
-		return ctrl.Result{}, err
+	if !controlled {
+		return reconcile.Result{}, nil
 	}
 
-	for _, deployment := range deployments {
-		if secret.Annotations == nil {
-			secret.Annotations = map[string]string{}
-		}
-		existingSHA, ok := secret.Annotations[shaAnnotation]
-		expectedSHA := getSHA(secret)
-		// create sha annotation when doesn't exist
-		if !ok {
-			secret.Annotations[shaAnnotation] = expectedSHA
-			return ctrl.Result{}, r.Update(ctx, secret)
+	if !svc.HasAnnotation() {
+		log.Info("updating secret with new sha")
+		return reconcile.Result{}, svc.UpdateAnnotation()
+	}
+
+	if svc.ShouldRestart() {
+		log.Info("initiating a rollout restart")
+		err = svc.RolloutRestart()
+		if err != nil {
+			return reconcile.Result{}, fmt.Errorf("could not initiate a rollout restart: %w", err)
 		}
 
-		// restart deployment
-		if existingSHA != expectedSHA {
-			if deployment.Annotations == nil {
-				deployment.Annotations = map[string]string{}
-			}
-			deployment.Annotations[deploymentRestartAnnotation] = time.Now().String()
-			return ctrl.Result{}, r.Update(ctx, &deployment)
+		err = svc.UpdateAnnotation()
+		if err != nil {
+			return reconcile.Result{}, fmt.Errorf("could not update annotation: %w", err)
 		}
 	}
 
 	return ctrl.Result{}, nil
-}
-
-func getSHA(secret *corev1.Secret) string {
-	sha := sha256.New()
-	for _, value := range secret.Data {
-		sha.Write(value)
-	}
-	return hex.EncodeToString(sha.Sum(nil))
-}
-
-func (r *RedeploySecretReconciler) getRedeploymentApplications(ctx context.Context, namespace string) ([]platformv1alpha1.Redeployment, error) {
-	redeploymentApplications := &platformv1alpha1.RedeploymentList{}
-
-	if err := r.List(ctx, redeploymentApplications, &client.ListOptions{Namespace: namespace}); err != nil {
-		return nil, err
-	}
-
-	return redeploymentApplications.Items, nil
-}
-
-func (r *RedeploySecretReconciler) getDeploymentsForSecret(ctx context.Context, redeployments []platformv1alpha1.Redeployment, secret *corev1.Secret) ([]appsv1.Deployment, error) {
-
-	result := []appsv1.Deployment{}
-	deployments := &appsv1.DeploymentList{}
-
-	if err := r.List(ctx, deployments, &client.ListOptions{Namespace: secret.Namespace}); err != nil {
-		return nil, err
-	}
-	for _, deployment := range deployments.Items {
-		for _, redeployment := range redeployments {
-			if redeployment.Spec.Workflow == platformv1alpha1.Deployment {
-				for _, volume := range deployment.Spec.Template.Spec.Volumes {
-					if volume.Secret != nil && volume.Secret.SecretName == secret.Name {
-						result = append(result, deployment)
-					}
-				}
-			}
-		}
-	}
-
-	return result, nil
 }
 
 // SetupWithManager sets up the controller with the Manager.

@@ -18,6 +18,17 @@ spec:
           command: ["sleep", "3600"]
           env:
             # Define the environment variable
+            - name: USER
+              valueFrom:
+                secretKeyRef:
+                  key: username
+                  name: demo-app-secret
+            - name: PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  key: password
+                  name: demo-app-secret
+
             - name: PLAYER_INITIAL_LIVES # Notice that the case is different here
               # from the key name in the ConfigMap.
               valueFrom:
@@ -35,6 +46,10 @@ spec:
               readOnly: true
       volumes:
         # You set volumes at the Pod level, then mount them into containers inside that Pod
+        - name: demo-app-secret
+          secret:
+            secretName: demo-app-secret
+
         - name: config
           configMap:
             # Provide the name of the ConfigMap you want to mount.
