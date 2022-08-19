@@ -8,6 +8,9 @@ spec:
     matchLabels:
       app.kubernetes.io/name: demo-app
   template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: demo-app
     spec:
       containers:
         - name: demo-app
@@ -19,12 +22,12 @@ spec:
               # from the key name in the ConfigMap.
               valueFrom:
                 configMapKeyRef:
-                  name: game-demo           # The ConfigMap this value comes from.
+                  name: demo-app-config     # The ConfigMap this value comes from.
                   key: player_initial_lives # The key to fetch.
             - name: UI_PROPERTIES_FILE_NAME
               valueFrom:
                 configMapKeyRef:
-                  name: game-demo
+                  name: demo-app-config
                   key: ui_properties_file_name
           volumeMounts:
             - name: config
@@ -35,7 +38,7 @@ spec:
         - name: config
           configMap:
             # Provide the name of the ConfigMap you want to mount.
-            name: game-demo
+            name: demo-app-config
             # An array of keys from the ConfigMap to create as files
             items:
               - key: "game.properties"

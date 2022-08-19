@@ -12,7 +12,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 
-	"github.com/pluralsh/plural-operator/api/platform/v1alpha1"
+	"github.com/pluralsh/plural-operator/services/redeployment"
 )
 
 type ConfigMapRedeployReconciler struct {
@@ -22,17 +22,42 @@ type ConfigMapRedeployReconciler struct {
 }
 
 func (c *ConfigMapRedeployReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
-	log := c.Log.WithValues("redeploy", req.NamespacedName)
+	log := c.Log.WithValues("reconcile", req.NamespacedName)
 
-	redeploymentList := &v1alpha1.RedeploymentList{}
-	err := c.Client.List(ctx, redeploymentList, &client.ListOptions{})
+	configMap := &corev1.ConfigMap{}
+	err := c.Client.Get(ctx, req.NamespacedName, configMap)
 	if errors.IsNotFound(err) {
-		log.Error(nil, "could not find RedeploymentList")
+		log.Error(nil, "could not find configmap")
 		return reconcile.Result{}, nil
 	}
 
 	if err != nil {
-		return reconcile.Result{}, fmt.Errorf("could not fetch RedeploymentList: %+v", err)
+		return reconcile.Result{}, fmt.Errorf("could not fetch ConfigMap: %+v", err)
+	}
+
+	svc := redeployment.NewFactory().Create(redeployment.ResourceConfigMap, c.Client, configMap)
+	controlled, err := svc.IsControlled()
+	if err != nil {
+		return reconcile.Result{}, fmt.Errorf("could not check if config map is controlled by any application: %+v", err)
+	}
+
+	if !controlled {
+		return reconcile.Result{}, nil
+	}
+
+	if !svc.HasAnnotation() {
+		log.Info("updating config map with new sha")
+		return reconcile.Result{}, svc.UpdateAnnotation()
+	}
+
+	if svc.ShouldRestart() {
+		err = svc.UpdateAnnotation()
+		if err != nil {
+			return reconcile.Result{}, fmt.Errorf("could not update annotation: %+v", err)
+		}
+
+		log.Info("starting a rollout restart")
+		return reconcile.Result{}, svc.RolloutRestart()
 	}
 
 	return ctrl.Result{}, nil
