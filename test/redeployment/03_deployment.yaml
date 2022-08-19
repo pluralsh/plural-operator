@@ -28,7 +28,6 @@ spec:
                 secretKeyRef:
                   key: password
                   name: demo-app-secret
-
             - name: PLAYER_INITIAL_LIVES # Notice that the case is different here
               # from the key name in the ConfigMap.
               valueFrom:
@@ -44,12 +43,14 @@ spec:
             - name: config
               mountPath: "/config"
               readOnly: true
+            - name: secret
+              mountPath: "/secret"
+              readOnly: true
       volumes:
         # You set volumes at the Pod level, then mount them into containers inside that Pod
-        - name: demo-app-secret
+        - name: secret
           secret:
             secretName: demo-app-secret
-
         - name: config
           configMap:
             # Provide the name of the ConfigMap you want to mount.
