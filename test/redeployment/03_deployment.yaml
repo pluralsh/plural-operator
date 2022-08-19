@@ -1,17 +1,18 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: demo-app
+  name: deployment-1
   namespace: demo-app
 spec:
   selector:
     matchLabels:
-      app.kubernetes.io/name: demo-app
+      app.kubernetes.io/name: deployment-1
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: demo-app
+        app.kubernetes.io/name: deployment-1
     spec:
+      terminationGracePeriodSeconds: 1
       containers:
         - name: demo-app
           image: alpine
@@ -67,16 +68,16 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: demo-app-2
+  name: deployment-2
   namespace: demo-app
 spec:
   selector:
     matchLabels:
-      app.kubernetes.io/name: demo-app-2
+      app.kubernetes.io/name: deployment-2
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: demo-app-2
+        app.kubernetes.io/name: deployment-2
     spec:
       containers:
         - name: demo-app

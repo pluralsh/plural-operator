@@ -1,0 +1,66 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: statefulset
+  namespace: demo-app
+spec:
+  serviceName: redeployment-service
+  replicas: 3
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: statefulset
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: statefulset
+    spec:
+      terminationGracePeriodSeconds: 1
+      containers:
+        - name: demo-app
+          image: alpine
+          command: ["sleep", "3600"]
+          env:
+            # Define the environment variable
+            - name: USER
+              valueFrom:
+                secretKeyRef:
+                  key: username
+                  name: demo-app-secret
+            - name: PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  key: password
+                  name: demo-app-secret
+            - name: PLAYER_INITIAL_LIVES # Notice that the case is different here
+              # from the key name in the ConfigMap.
+              valueFrom:
+                configMapKeyRef:
+                  name: demo-app-config     # The ConfigMap this value comes from.
+                  key: player_initial_lives # The key to fetch.
+            - name: UI_PROPERTIES_FILE_NAME
+              valueFrom:
+                configMapKeyRef:
+                  name: demo-app-config
+                  key: ui_properties_file_name
+          volumeMounts:
+            - name: config
+              mountPath: "/config"
+              readOnly: true
+            - name: secret
+              mountPath: "/secret"
+              readOnly: true
+      volumes:
+        # You set volumes at the Pod level, then mount them into containers inside that Pod
+        - name: secret
+          secret:
+            secretName: demo-app-secret
+        - name: config
+          configMap:
+            # Provide the name of the ConfigMap you want to mount.
+            name: demo-app-config
+            # An array of keys from the ConfigMap to create as files
+            items:
+              - key: "game.properties"
+                path: "game.properties"
+              - key: "user-interface.properties"
+                path: "user-interface.properties"

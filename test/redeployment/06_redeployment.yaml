@@ -1,0 +1,41 @@
+apiVersion: "platform.plural.sh/v1alpha1"
+kind: Redeployment
+metadata:
+  name: demo-app-redeployment
+spec:
+  name: deployment-1
+  namespace: demo-app
+  workflow: deployment
+
+---
+
+apiVersion: "platform.plural.sh/v1alpha1"
+kind: Redeployment
+metadata:
+  name: demo-app-2-redeployment
+spec:
+  name: deployment-2
+  namespace: demo-app
+  workflow: deployment
+
+---
+
+apiVersion: "platform.plural.sh/v1alpha1"
+kind: Redeployment
+metadata:
+  name: demo-app-3-redeployment
+spec:
+  name: statefulset
+  namespace: demo-app
+  workflow: statefulset
+
+---
+
+apiVersion: "platform.plural.sh/v1alpha1"
+kind: Redeployment
+metadata:
+  name: demo-app-4-redeployment
+spec:
+  name: daemonset
+  namespace: demo-app
+  workflow: daemonset
