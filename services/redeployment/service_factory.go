@@ -22,6 +22,6 @@ func (f *defaultFactory) Create(resource Resource, client client.Client, object 
 	panic(fmt.Sprintf("unsupported resource found: %s", resource))
 }
 
-func NewFactory() IFactory {
+func NewFactory() Factory {
 	return &defaultFactory{}
 }

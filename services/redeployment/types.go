@@ -19,7 +19,7 @@ const (
 	restartAnnotation = "kubectl.kubernetes.io/restartedAt"
 )
 
-type IFactory interface {
+type Factory interface {
 	Create(resource Resource, client client.Client, object client.Object) (Service, error)
 }
 
