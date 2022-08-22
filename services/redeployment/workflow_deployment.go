@@ -45,7 +45,7 @@ func (d *deploymentWorkflow) restart(deployment appsv1.Deployment) error {
 		deployment.Spec.Template.ObjectMeta.Annotations = map[string]string{}
 	}
 
-	deployment.Spec.Template.ObjectMeta.Annotations[restartAnnotation] = time.Now().Format(time.RFC3339)
+	deployment.Spec.Template.ObjectMeta.Annotations[RestartAnnotation] = time.Now().Format(time.RFC3339)
 	return d.client.Update(d.ctx, &deployment)
 }
 

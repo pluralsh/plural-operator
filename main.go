@@ -20,6 +20,8 @@ import (
 	"flag"
 	"os"
 
+	"github.com/pluralsh/plural-operator/alertmanager"
+
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
@@ -92,84 +94,84 @@ func main() {
 		os.Exit(1)
 	}
 
-	//if err = (&controllers.PodReconciler{
-	//	Client: mgr.GetClient(),
-	//	Log:    ctrl.Log.WithName("controllers").WithName("Pod"),
-	//	Scheme: mgr.GetScheme(),
-	//}).SetupWithManager(mgr); err != nil {
-	//	setupLog.Error(err, "unable to create controller", "controller", "Pod")
-	//	os.Exit(1)
-	//}
-	//
-	//if err = (&controllers.SecretSyncReconciler{
-	//	Client: mgr.GetClient(),
-	//	Log:    ctrl.Log.WithName("controllers").WithName("SecretSync"),
-	//	Scheme: mgr.GetScheme(),
-	//}).SetupWithManager(mgr); err != nil {
-	//	setupLog.Error(err, "unable to create controller", "controller", "SecretSync")
-	//	os.Exit(1)
-	//}
-	//
-	//if err = (&controllers.ServiceAccountReconciler{
-	//	Client: mgr.GetClient(),
-	//	Log:    ctrl.Log.WithName("controllers").WithName("ServiceAccount"),
-	//	Scheme: mgr.GetScheme(),
-	//}).SetupWithManager(mgr); err != nil {
-	//	setupLog.Error(err, "unable to create controller", "controller", "ServiceAccount")
-	//	os.Exit(1)
-	//}
-	//
-	//if err = (&controllers.JobReconciler{
-	//	Client: mgr.GetClient(),
-	//	Log:    ctrl.Log.WithName("controllers").WithName("Job"),
-	//	Scheme: mgr.GetScheme(),
-	//}).SetupWithManager(mgr); err != nil {
-	//	setupLog.Error(err, "unable to create controller", "controller", "Job")
-	//	os.Exit(1)
-	//}
-	//
-	//if err = (&controllers.NamespaceReconciler{
-	//	Client: mgr.GetClient(),
-	//	Log:    ctrl.Log.WithName("controllers").WithName("Namespace"),
-	//	Scheme: mgr.GetScheme(),
-	//}).SetupWithManager(mgr); err != nil {
-	//	setupLog.Error(err, "unable to create controller", "controller", "Namespace")
-	//	os.Exit(1)
-	//}
-	//
-	//if err = (&controllers.SecretReconciler{
-	//	Client: mgr.GetClient(),
-	//	Log:    ctrl.Log.WithName("controllers").WithName("Secret"),
-	//	Scheme: mgr.GetScheme(),
-	//}).SetupWithManager(mgr); err != nil {
-	//	setupLog.Error(err, "unable to create controller", "controller", "Secret")
-	//	os.Exit(1)
-	//}
-	//
-	//if err = (&controllers.StatefulSetResizeReconciler{
-	//	Client: mgr.GetClient(),
-	//	Log:    ctrl.Log.WithName("controllers").WithName("StatefulSetResize"),
-	//	Scheme: mgr.GetScheme(),
-	//}).SetupWithManager(mgr); err != nil {
-	//	setupLog.Error(err, "unable to create controller", "controller", "StatefulSetResize")
-	//	os.Exit(1)
-	//}
-	//if err = (&controllers.DefaultStorageClassReconciler{
-	//	Client: mgr.GetClient(),
-	//	Log:    ctrl.Log.WithName("controllers").WithName("DefaultStorageClass"),
-	//	Scheme: mgr.GetScheme(),
-	//}).SetupWithManager(mgr); err != nil {
-	//	setupLog.Error(err, "unable to create controller", "controller", "DefaultStorageClass")
-	//	os.Exit(1)
-	//}
-	//if err = (&controllers.LicenseReconciler{
-	//	Client: mgr.GetClient(),
-	//	Scheme: mgr.GetScheme(),
-	//	Log:    ctrl.Log.WithName("controllers").WithName("License"),
-	//}).SetupWithManager(mgr); err != nil {
-	//	setupLog.Error(err, "unable to create controller", "controller", "License")
-	//	os.Exit(1)
-	//}
+	if err = (&controllers.PodReconciler{
+		Client: mgr.GetClient(),
+		Log:    ctrl.Log.WithName("controllers").WithName("Pod"),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "Pod")
+		os.Exit(1)
+	}
+
+	if err = (&controllers.SecretSyncReconciler{
+		Client: mgr.GetClient(),
+		Log:    ctrl.Log.WithName("controllers").WithName("SecretSync"),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "SecretSync")
+		os.Exit(1)
+	}
+
+	if err = (&controllers.ServiceAccountReconciler{
+		Client: mgr.GetClient(),
+		Log:    ctrl.Log.WithName("controllers").WithName("ServiceAccount"),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "ServiceAccount")
+		os.Exit(1)
+	}
+
+	if err = (&controllers.JobReconciler{
+		Client: mgr.GetClient(),
+		Log:    ctrl.Log.WithName("controllers").WithName("Job"),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "Job")
+		os.Exit(1)
+	}
+
+	if err = (&controllers.NamespaceReconciler{
+		Client: mgr.GetClient(),
+		Log:    ctrl.Log.WithName("controllers").WithName("Namespace"),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "Namespace")
+		os.Exit(1)
+	}
+
+	if err = (&controllers.SecretReconciler{
+		Client: mgr.GetClient(),
+		Log:    ctrl.Log.WithName("controllers").WithName("Secret"),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "Secret")
+		os.Exit(1)
+	}
+
+	if err = (&controllers.StatefulSetResizeReconciler{
+		Client: mgr.GetClient(),
+		Log:    ctrl.Log.WithName("controllers").WithName("StatefulSetResize"),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "StatefulSetResize")
+		os.Exit(1)
+	}
+	if err = (&controllers.DefaultStorageClassReconciler{
+		Client: mgr.GetClient(),
+		Log:    ctrl.Log.WithName("controllers").WithName("DefaultStorageClass"),
+		Scheme: mgr.GetScheme(),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "DefaultStorageClass")
+		os.Exit(1)
+	}
+	if err = (&controllers.LicenseReconciler{
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
+		Log:    ctrl.Log.WithName("controllers").WithName("License"),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "License")
+		os.Exit(1)
+	}
 	if err = (&controllers.ConfigMapRedeployReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
@@ -200,21 +202,21 @@ func main() {
 	// add webhook handler for alertmanager
 	ctx := ctrl.SetupSignalHandler()
 
-	//amr := &alertmanager.AlertmanagerReconciler{
-	//	Client: mgr.GetClient(),
-	//	Log:    ctrl.Log.WithName("controllers").WithName("Alertmanager"),
-	//	Scheme: mgr.GetScheme(),
-	//}
-	//
-	//if err := amr.SetupWithManager(mgr); err != nil {
-	//	setupLog.Error(err, "unable to create controller", "controller", "alertmanager")
-	//	os.Exit(1)
-	//}
+	amr := &alertmanager.AlertmanagerReconciler{
+		Client: mgr.GetClient(),
+		Log:    ctrl.Log.WithName("controllers").WithName("Alertmanager"),
+		Scheme: mgr.GetScheme(),
+	}
 
-	//if err := mgr.AddMetricsExtraHandler("/webhook", alertmanager.AlertmanagerHandler(ctx, amr)); err != nil {
-	//	setupLog.Error(err, "unable to set up alertmanager webhook")
-	//	os.Exit(1)
-	//}
+	if err := amr.SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "alertmanager")
+		os.Exit(1)
+	}
+
+	if err := mgr.AddMetricsExtraHandler("/webhook", alertmanager.AlertmanagerHandler(ctx, amr)); err != nil {
+		setupLog.Error(err, "unable to set up alertmanager webhook")
+		os.Exit(1)
+	}
 
 	// Setup oauth injector mutating webhook
 	if os.Getenv("ENABLE_WEBHOOKS") != "false" {

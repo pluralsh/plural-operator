@@ -60,19 +60,19 @@ func (s *secretService) IsControlled() (bool, error) {
 }
 
 func (s *secretService) HasAnnotation() bool {
-	_, ok := s.secret.Annotations[shaAnnotation]
+	_, ok := s.secret.Annotations[ShaAnnotation]
 	return ok
 }
 
 func (s *secretService) UpdateAnnotation() error {
 	sha := s.getSHA()
-	s.secret.Annotations[shaAnnotation] = sha
+	s.secret.Annotations[ShaAnnotation] = sha
 
 	return s.client.Update(s.ctx, s.secret)
 }
 
 func (s *secretService) ShouldRestart() bool {
-	existingSHA := s.secret.Annotations[shaAnnotation]
+	existingSHA := s.secret.Annotations[ShaAnnotation]
 	expectedSHA := s.getSHA()
 
 	return existingSHA != expectedSHA

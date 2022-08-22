@@ -45,7 +45,7 @@ func (d *daemonSetWorkflow) restart(daemonSet *appsv1.DaemonSet) error {
 		daemonSet.Spec.Template.ObjectMeta.Annotations = map[string]string{}
 	}
 
-	daemonSet.Spec.Template.ObjectMeta.Annotations[restartAnnotation] = time.Now().Format(time.RFC3339)
+	daemonSet.Spec.Template.ObjectMeta.Annotations[RestartAnnotation] = time.Now().Format(time.RFC3339)
 	return d.client.Update(d.ctx, daemonSet)
 }
 

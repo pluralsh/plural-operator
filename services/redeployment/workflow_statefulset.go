@@ -45,7 +45,7 @@ func (d *statefulSetWorkflow) restart(statefulSet *appsv1.StatefulSet) error {
 		statefulSet.Spec.Template.ObjectMeta.Annotations = map[string]string{}
 	}
 
-	statefulSet.Spec.Template.ObjectMeta.Annotations[restartAnnotation] = time.Now().Format(time.RFC3339)
+	statefulSet.Spec.Template.ObjectMeta.Annotations[RestartAnnotation] = time.Now().Format(time.RFC3339)
 	return d.client.Update(d.ctx, statefulSet)
 }
 

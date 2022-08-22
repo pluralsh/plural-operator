@@ -41,21 +41,21 @@ func (c *configMapService) IsControlled() (bool, error) {
 
 // HasAnnotation implements Service.HasAnnotation interface.
 func (c *configMapService) HasAnnotation() bool {
-	_, exists := c.configMap.Annotations[shaAnnotation]
+	_, exists := c.configMap.Annotations[ShaAnnotation]
 	return exists
 }
 
 // UpdateAnnotation implements Service.UpdateAnnotation interface.
 func (c *configMapService) UpdateAnnotation() error {
 	sha := c.getSHA()
-	c.configMap.Annotations[shaAnnotation] = sha
+	c.configMap.Annotations[ShaAnnotation] = sha
 
 	return c.client.Update(c.ctx, c.configMap)
 }
 
 // ShouldRestart implements Service.ShouldRestart interface.
 func (c *configMapService) ShouldRestart() bool {
-	existingSHA := c.configMap.Annotations[shaAnnotation]
+	existingSHA := c.configMap.Annotations[ShaAnnotation]
 	expectedSHA := c.getSHA()
 
 	return existingSHA != expectedSHA

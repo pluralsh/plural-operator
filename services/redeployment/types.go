@@ -13,8 +13,8 @@ const (
 
 // Annotations used by the redeployment operator
 const (
-	shaAnnotation     = "platform.plural.sh/sha"
-	restartAnnotation = "kubectl.kubernetes.io/restartedAt"
+	ShaAnnotation     = "platform.plural.sh/sha"
+	RestartAnnotation = "kubectl.kubernetes.io/restartedAt"
 )
 
 // Service is a redeployment operator service that simplifies the process of
