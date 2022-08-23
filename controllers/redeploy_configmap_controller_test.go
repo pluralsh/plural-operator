@@ -28,11 +28,11 @@ func init() {
 	utilruntime.Must(v1alpha1.AddToScheme(scheme.Scheme))
 }
 
-func TestReconcileSecret(t *testing.T) {
+func TestReconcileConfigmap(t *testing.T) {
 	tests := []struct {
 		name                   string
-		secretName             string
-		secretNamespace        string
+		configMapName          string
+		configMapNamespace     string
 		deploymentsForRestart  []string
 		statefulSetsForRestart []string
 		daemonSetsForRestart   []string
@@ -40,89 +40,89 @@ func TestReconcileSecret(t *testing.T) {
 		expectedSHAAnnotation  bool
 	}{
 		{
-			name:            "scenario 1: no redeployments, don't add SHA annotation",
-			secretNamespace: "test",
-			secretName:      "testsecret",
+			name:               "scenario 1: no redeployments, don't add SHA annotation",
+			configMapNamespace: "test",
+			configMapName:      "testsecret",
 			existingObjects: []ctrlruntimeclient.Object{
-				&corev1.Secret{
+				&corev1.ConfigMap{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "testsecret",
 						Namespace: "test",
 					},
-					Data: map[string][]byte{"z": {1, 2, 3}, "a": {4, 5, 6}},
+					Data: map[string]string{"z": "a", "b": "c"},
 				},
-				genDeploymentWithSecretVolume("dep1", "test", "testsecret"),
+				genDeploymentWithConfigMapVolume("dep1", "test", "testsecret"),
 			},
 		},
 		{
 			name:                  "scenario 2: add SHA annotation to the secret, when doesn't exist",
-			secretNamespace:       "test",
-			secretName:            "testsecret",
+			configMapNamespace:    "test",
+			configMapName:         "testsecret",
 			expectedSHAAnnotation: true,
 			existingObjects: []ctrlruntimeclient.Object{
-				&corev1.Secret{
+				&corev1.ConfigMap{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "testsecret",
 						Namespace: "test",
 					},
-					Data: map[string][]byte{"z": {1, 2, 3}, "a": {4, 5, 6}},
+					Data: map[string]string{"z": "a", "b": "c"},
 				},
 				genRedeployment("dep1", "test", v1alpha1.Deployment),
 				genRedeployment("dep3", "test", v1alpha1.Deployment),
-				genDeploymentWithSecretVolume("dep1", "test", "testsecret"),
+				genDeploymentWithConfigMapVolume("dep1", "test", "testsecret"),
 			},
 		},
 		{
 			name:                  "scenario 3: restart only deployments after secret changes",
-			secretNamespace:       "test",
-			secretName:            "testsecret",
+			configMapNamespace:    "test",
+			configMapName:         "testsecret",
 			expectedSHAAnnotation: true,
 			deploymentsForRestart: []string{"dep1", "dep3"},
 			existingObjects: []ctrlruntimeclient.Object{
-				&corev1.Secret{
+				&corev1.ConfigMap{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:        "testsecret",
 						Namespace:   "test",
 						Annotations: map[string]string{redeployment.ShaAnnotation: "xyz"},
 					},
-					Data: map[string][]byte{"z": {1, 2, 3}, "a": {4, 5, 6}},
+					Data: map[string]string{"z": "a", "b": "c"},
 				},
 				genRedeployment("dep1", "test", v1alpha1.Deployment),
 				genRedeployment("dep3", "test", v1alpha1.Deployment),
-				genDeploymentWithSecretVolume("dep1", "test", "testsecret"),
-				genDeploymentWithSecretVolume("dep2", "test", "sometest"),
-				genDeploymentWithSecretVolume("dep3", "test", "testsecret"),
-				genStatefulSetWithSecretVolume("state2", "test", "sometest"),
-				genDeamonSetWithSecretVolume("daemon3", "test", "sometest"),
+				genDeploymentWithConfigMapVolume("dep1", "test", "testsecret"),
+				genDeploymentWithConfigMapVolume("dep2", "test", "sometest"),
+				genDeploymentWithConfigMapVolume("dep3", "test", "testsecret"),
+				genStatefulSetWithConfigVolume("state2", "test", "sometest"),
+				genDeamonSetWithConfigVolume("daemon3", "test", "sometest"),
 			},
 		},
 		{
 			name:                   "scenario 4: restart deployments, daemonSets, and statefulSets after secret changes",
-			secretNamespace:        "test",
-			secretName:             "testsecret",
+			configMapNamespace:     "test",
+			configMapName:          "testsecret",
 			expectedSHAAnnotation:  true,
 			deploymentsForRestart:  []string{"dep1", "dep3"},
 			daemonSetsForRestart:   []string{"daemon1", "daemon2"},
 			statefulSetsForRestart: []string{"state1"},
 			existingObjects: []ctrlruntimeclient.Object{
-				&corev1.Secret{
+				&corev1.ConfigMap{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:        "testsecret",
 						Namespace:   "test",
 						Annotations: map[string]string{redeployment.ShaAnnotation: "xyz"},
 					},
-					Data: map[string][]byte{"z": {1, 2, 3}, "a": {4, 5, 6}},
+					Data: map[string]string{"z": "a", "b": "c"},
 				},
 				genRedeployment("dep1", "test", v1alpha1.Deployment),
 				genRedeployment("dep3", "test", v1alpha1.Deployment),
-				genDeploymentWithSecretVolume("dep1", "test", "testsecret"),
-				genDeploymentWithSecretVolume("dep2", "test", "sometest"),
-				genDeploymentWithSecretVolume("dep3", "test", "testsecret"),
-				genStatefulSetWithSecretVolume("state1", "test", "testsecret"),
-				genStatefulSetWithSecretVolume("state2", "test", "sometest"),
-				genDeamonSetWithSecretVolume("daemon1", "test", "testsecret"),
-				genDeamonSetWithSecretVolume("daemon2", "test", "testsecret"),
-				genDeamonSetWithSecretVolume("daemon3", "test", "sometest"),
+				genDeploymentWithConfigMapVolume("dep1", "test", "testsecret"),
+				genDeploymentWithConfigMapVolume("dep2", "test", "sometest"),
+				genDeploymentWithConfigMapVolume("dep3", "test", "testsecret"),
+				genStatefulSetWithConfigVolume("state1", "test", "testsecret"),
+				genStatefulSetWithConfigVolume("state2", "test", "sometest"),
+				genDeamonSetWithConfigVolume("daemon1", "test", "testsecret"),
+				genDeamonSetWithConfigVolume("daemon2", "test", "testsecret"),
+				genDeamonSetWithConfigVolume("daemon3", "test", "sometest"),
 			},
 		},
 	}
@@ -138,27 +138,27 @@ func TestReconcileSecret(t *testing.T) {
 
 			// act
 			ctx := context.Background()
-			target := RedeploySecretReconciler{
+			target := ConfigMapRedeployReconciler{
 				Client: fakeClient,
-				Log:    ctrl.Log.WithName("controllers").WithName("RedeploySecretsController"),
+				Log:    ctrl.Log.WithName("controllers").WithName("RedeployConfigMapController"),
 				Scheme: scheme.Scheme,
 			}
 
-			_, err := target.Reconcile(ctx, reconcile.Request{NamespacedName: types.NamespacedName{Name: test.secretName, Namespace: test.secretNamespace}})
+			_, err := target.Reconcile(ctx, reconcile.Request{NamespacedName: types.NamespacedName{Name: test.configMapName, Namespace: test.configMapNamespace}})
 			assert.NoError(t, err)
 
-			secret := &corev1.Secret{}
-			err = fakeClient.Get(ctx, client.ObjectKey{Name: test.secretName, Namespace: test.secretNamespace}, secret)
+			configMap := &corev1.ConfigMap{}
+			err = fakeClient.Get(ctx, client.ObjectKey{Name: test.configMapName, Namespace: test.configMapNamespace}, configMap)
 			assert.NoError(t, err)
 
 			if test.expectedSHAAnnotation {
-				_, shaAnnotation := secret.Annotations[redeployment.ShaAnnotation]
+				_, shaAnnotation := configMap.Annotations[redeployment.ShaAnnotation]
 				assert.True(t, shaAnnotation, "expected SHA annotation")
 			}
 
 			for _, deployment := range test.deploymentsForRestart {
 				d := &appsv1.Deployment{}
-				err := fakeClient.Get(ctx, client.ObjectKey{Name: deployment, Namespace: test.secretNamespace}, d)
+				err := fakeClient.Get(ctx, client.ObjectKey{Name: deployment, Namespace: test.configMapNamespace}, d)
 				assert.NoError(t, err)
 				if d.Spec.Template.ObjectMeta.Annotations == nil {
 					t.Fatalf("expected annotations for deployment %s", deployment)
@@ -170,7 +170,7 @@ func TestReconcileSecret(t *testing.T) {
 	}
 }
 
-func genDeploymentWithSecretVolume(deploymentName, deploymentNamespace, secretName string) *appsv1.Deployment {
+func genDeploymentWithConfigMapVolume(deploymentName, deploymentNamespace, configName string) *appsv1.Deployment {
 	return &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      deploymentName,
@@ -183,8 +183,10 @@ func genDeploymentWithSecretVolume(deploymentName, deploymentNamespace, secretNa
 						{
 							Name: "test",
 							VolumeSource: corev1.VolumeSource{
-								Secret: &corev1.SecretVolumeSource{
-									SecretName: secretName,
+								ConfigMap: &corev1.ConfigMapVolumeSource{
+									LocalObjectReference: corev1.LocalObjectReference{
+										Name: configName,
+									},
 								},
 							},
 						},
@@ -195,7 +197,7 @@ func genDeploymentWithSecretVolume(deploymentName, deploymentNamespace, secretNa
 	}
 }
 
-func genDeamonSetWithSecretVolume(name, namespace, secretName string) *appsv1.DaemonSet {
+func genDeamonSetWithConfigVolume(name, namespace, configName string) *appsv1.DaemonSet {
 	return &appsv1.DaemonSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
@@ -208,8 +210,10 @@ func genDeamonSetWithSecretVolume(name, namespace, secretName string) *appsv1.Da
 						{
 							Name: "test",
 							VolumeSource: corev1.VolumeSource{
-								Secret: &corev1.SecretVolumeSource{
-									SecretName: secretName,
+								ConfigMap: &corev1.ConfigMapVolumeSource{
+									LocalObjectReference: corev1.LocalObjectReference{
+										Name: configName,
+									},
 								},
 							},
 						},
@@ -220,7 +224,7 @@ func genDeamonSetWithSecretVolume(name, namespace, secretName string) *appsv1.Da
 	}
 }
 
-func genStatefulSetWithSecretVolume(name, namespace, secretName string) *appsv1.StatefulSet {
+func genStatefulSetWithConfigVolume(name, namespace, configName string) *appsv1.StatefulSet {
 	return &appsv1.StatefulSet{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      name,
@@ -233,27 +237,16 @@ func genStatefulSetWithSecretVolume(name, namespace, secretName string) *appsv1.
 						{
 							Name: "test",
 							VolumeSource: corev1.VolumeSource{
-								Secret: &corev1.SecretVolumeSource{
-									SecretName: secretName,
+								ConfigMap: &corev1.ConfigMapVolumeSource{
+									LocalObjectReference: corev1.LocalObjectReference{
+										Name: configName,
+									},
 								},
 							},
 						},
 					},
 				},
 			},
-		},
-	}
-}
-
-func genRedeployment(name, namespace string, workflow v1alpha1.WorkflowType) *v1alpha1.Redeployment {
-	return &v1alpha1.Redeployment{
-		ObjectMeta: metav1.ObjectMeta{
-			Name: name,
-		},
-		Spec: v1alpha1.RedeploymentSpec{
-			Name:      name,
-			Namespace: namespace,
-			Workflow:  workflow,
 		},
 	}
 }

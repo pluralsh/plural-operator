@@ -1,3 +1,6 @@
+//go:build suite
+// +build suite
+
 /*
 Copyright 2021.
 

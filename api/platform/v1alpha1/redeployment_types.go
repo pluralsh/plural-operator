@@ -24,10 +24,11 @@ const (
 	DaemonSet   WorkflowType = "daemonset"
 	Deployment  WorkflowType = "deployment"
 	StatefulSet WorkflowType = "statefulset"
+	Pod         WorkflowType = "pod"
 )
 
 // the types of Kubernetes workloads
-// +kubebuilder:validation:Enum=daemonset;deployment;statefulset
+// +kubebuilder:validation:Enum=daemonset;deployment;statefulset;pod
 type WorkflowType string
 
 // RedeploymentStatus defines the observed state of Redeployment

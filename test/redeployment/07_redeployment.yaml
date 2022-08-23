@@ -39,3 +39,14 @@ spec:
   name: daemonset
   namespace: demo-app
   workflow: daemonset
+
+---
+
+apiVersion: "platform.plural.sh/v1alpha1"
+kind: Redeployment
+metadata:
+  name: demo-app-5-redeployment
+spec:
+  name: test-pod
+  namespace: demo-app
+  workflow: pod

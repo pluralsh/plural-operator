@@ -1,0 +1,40 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: test-pod
+  namespace: demo-app
+spec:
+  volumes:
+    - name: config
+      configMap:
+        # Provide the name of the ConfigMap you want to mount.
+        name: demo-app-config
+        # An array of keys from the ConfigMap to create as files
+        items:
+          - key: "game.properties"
+            path: "game.properties"
+          - key: "user-interface.properties"
+            path: "user-interface.properties"
+  containers:
+    - name: test-container
+      image: alpine
+      command: ["sleep", "3600"]
+      env:
+        - name: PLAYER_INITIAL_LIVES # Notice that the case is different here
+          # from the key name in the ConfigMap.
+          valueFrom:
+            configMapKeyRef:
+              name: demo-app-config     # The ConfigMap this value comes from.
+              key: player_initial_lives # The key to fetch.
+        - name: UI_PROPERTIES_FILE_NAME
+          valueFrom:
+            configMapKeyRef:
+              name: demo-app-config
+              key: ui_properties_file_name
+      envFrom:
+        - secretRef:
+            name: demo-app-secret
+      volumeMounts:
+        - name: config
+          mountPath: "/config"
+  restartPolicy: Never

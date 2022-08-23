@@ -3,9 +3,8 @@ package redeployment
 import (
 	"fmt"
 
-	"sigs.k8s.io/controller-runtime/pkg/client"
-
 	"github.com/pluralsh/plural-operator/api/platform/v1alpha1"
+	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func newWorkflow(client client.Client, redeployment *v1alpha1.Redeployment) (Workflow, error) {
@@ -16,6 +15,8 @@ func newWorkflow(client client.Client, redeployment *v1alpha1.Redeployment) (Wor
 		return newStatefulSetWorkflow(client, redeployment.Spec.Namespace)
 	case v1alpha1.DaemonSet:
 		return newDaemonSetWorkflow(client, redeployment.Spec.Namespace)
+	case v1alpha1.Pod:
+		return newPodWorkflow(client, redeployment.Spec.Namespace)
 	}
 
 	panic(fmt.Sprintf("unsupported workflow type found: %s", redeployment.Spec.Workflow))

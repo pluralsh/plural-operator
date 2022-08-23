@@ -50,6 +50,7 @@ spec:
                 - daemonset
                 - deployment
                 - statefulset
+                - pod
                 type: string
             required:
             - name

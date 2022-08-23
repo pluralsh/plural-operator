@@ -20,6 +20,17 @@ func isUsed(volume corev1.Volume, workflowResourceNamespace string, resource Res
 	return false
 }
 
+func isUsedReferance(envFromSource corev1.EnvFromSource, workflowResourceNamespace string, resource Resource, namespace string, name string) bool {
+	switch resource {
+	case ResourceConfigMap:
+		return envFromSource.ConfigMapRef != nil && envFromSource.ConfigMapRef.Name == name && workflowResourceNamespace == namespace
+	case ResourceSecret:
+		return envFromSource.SecretRef != nil && envFromSource.SecretRef.Name == name && workflowResourceNamespace == namespace
+	}
+
+	return false
+}
+
 func getRedeployments(ctx context.Context, c client.Client, namespace string) ([]v1alpha1.Redeployment, error) {
 	redeploymentList := &v1alpha1.RedeploymentList{}
 	result := make([]v1alpha1.Redeployment, 0)
