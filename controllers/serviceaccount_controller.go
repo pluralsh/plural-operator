@@ -19,6 +19,9 @@ package controllers
 import (
 	"context"
 	"fmt"
+	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/selection"
+	"k8s.io/apimachinery/pkg/util/sets"
 
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
@@ -27,6 +30,8 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
+
+const pluralCreds = "plural-creds"
 
 // ServiceAccountReconciler reconciles a SecretSync object
 type ServiceAccountReconciler struct {
@@ -68,19 +73,39 @@ func (r *ServiceAccountReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
-	pullSecrets := serviceaccount.ImagePullSecrets
-
-	for _, secret := range pullSecrets {
-		if secret.Name == "plural-creds" {
-			log.Info(fmt.Sprintf("Service account already has creds attached"))
-			return ctrl.Result{}, nil
-		}
+	// get other credential secrets
+	labelSelector, err := pluralCredLabelSelector()
+	if err != nil {
+		log.Error(err, "Failed to fetch label selector")
+		return ctrl.Result{}, err
+	}
+	credSecrets := &corev1.SecretList{}
+	if err := r.List(ctx, credSecrets, &client.ListOptions{Namespace: serviceaccount.Namespace, LabelSelector: labelSelector}); err != nil {
+		log.Error(err, "Failed to fetch credential secrets")
+		return ctrl.Result{}, err
 	}
 
-	pullSecrets = append(pullSecrets, corev1.LocalObjectReference{
-		Name: "plural-creds",
-	})
-	serviceaccount.ImagePullSecrets = pullSecrets
+	existingPullSecretsSet := sets.NewString()
+	expectedPullSecretsSet := sets.NewString(pluralCreds)
+
+	for _, secret := range serviceaccount.ImagePullSecrets {
+		existingPullSecretsSet.Insert(secret.Name)
+	}
+	for _, secret := range credSecrets.Items {
+		expectedPullSecretsSet.Insert(secret.Name)
+	}
+	if existingPullSecretsSet.HasAll(expectedPullSecretsSet.List()...) {
+		log.Info("Service account already has creds attached")
+		return ctrl.Result{}, nil
+	}
+
+	serviceaccount.ImagePullSecrets = []corev1.LocalObjectReference{}
+
+	for _, secret := range expectedPullSecretsSet.List() {
+		serviceaccount.ImagePullSecrets = append(serviceaccount.ImagePullSecrets, corev1.LocalObjectReference{
+			Name: secret,
+		})
+	}
 
 	if err := r.Update(ctx, &serviceaccount); err != nil {
 		meta := serviceaccount.ObjectMeta
@@ -89,6 +114,14 @@ func (r *ServiceAccountReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 	}
 
 	return ctrl.Result{}, nil
+}
+
+func pluralCredLabelSelector() (labels.Selector, error) {
+	req, err := labels.NewRequirement(secretTypeLabel, selection.Equals, []string{pluralCreds})
+	if err != nil {
+		return nil, fmt.Errorf("failed to build label selector: %w", err)
+	}
+	return labels.Parse(req.String())
 }
 
 // SetupWithManager sets up the controller with the Manager.

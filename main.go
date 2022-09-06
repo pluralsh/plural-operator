@@ -172,6 +172,15 @@ func main() {
 		os.Exit(1)
 	}
 
+	if err = (&controllers.RegistryCredentialsReconciler{
+		Client: mgr.GetClient(),
+		Scheme: mgr.GetScheme(),
+		Log:    ctrl.Log.WithName("controllers").WithName("RegistryCredentials"),
+	}).SetupWithManager(mgr); err != nil {
+		setupLog.Error(err, "unable to create controller", "controller", "RegistryCredentials")
+		os.Exit(1)
+	}
+
 	if err = (&controllers.ConfigMapRedeployReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
