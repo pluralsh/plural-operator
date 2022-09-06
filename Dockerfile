@@ -17,6 +17,7 @@ COPY api/ api/
 COPY controllers/ controllers/
 COPY alertmanager/ alertmanager/
 COPY resources/ resources/
+COPY services/ services/
 
 # Build
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=${TARGETARCH} GO111MODULE=on go build -a -o manager main.go
