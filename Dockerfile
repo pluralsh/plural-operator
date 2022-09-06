@@ -1,5 +1,5 @@
 # Build the manager binary
-FROM gcr.io/pluralsh/golang:1.15 as builder
+FROM golang:1.18.2-alpine3.15 as builder
 
 ARG TARGETARCH
 
