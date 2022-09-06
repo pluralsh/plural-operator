@@ -1,0 +1,12 @@
+apiVersion: "platform.plural.sh/v1alpha1"
+kind: RegistryCredential
+metadata:
+  name: demo-app-cred
+  namespace: demo-app
+spec:
+  username: test
+  email: demo@plural.sh
+  server: dkr.plural.sh
+  password: # reference to the secret with the password
+    name: demo-app-secret
+    key: password
