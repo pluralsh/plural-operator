@@ -21,6 +21,11 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"k8s.io/apimachinery/pkg/types"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
+	"sigs.k8s.io/controller-runtime/pkg/handler"
+	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+	"sigs.k8s.io/controller-runtime/pkg/source"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -33,6 +38,8 @@ import (
 
 	platformv1alpha1 "github.com/pluralsh/plural-operator/api/platform/v1alpha1"
 )
+
+const dockerconfigjson = ".dockerconfigjson"
 
 type RegistryCred struct {
 	Auth     string `json:"auth"`
@@ -78,20 +85,41 @@ func (r *RegistryCredentialsReconciler) Reconcile(ctx context.Context, req ctrl.
 		return ctrl.Result{}, nil
 	}
 
-	if err := r.createRegistryCredentialSecret(ctx, credentials); err != nil {
-		log.Error(err, "failed to create registry credential secret")
+	if err := r.createOrUpdateRegistryCredentialSecret(ctx, credentials, log); err != nil {
+		log.Error(err, "failed to create/update registry credential secret")
 		return ctrl.Result{}, err
 	}
 
 	return ctrl.Result{}, nil
 }
 
-func (r *RegistryCredentialsReconciler) createRegistryCredentialSecret(ctx context.Context, credentials platformv1alpha1.RegistryCredential) error {
-	if err := r.Get(ctx, client.ObjectKey{Namespace: credentials.Namespace, Name: credentials.GetPasswordSecretName()}, &corev1.Secret{}); err != nil {
+func (r *RegistryCredentialsReconciler) createOrUpdateRegistryCredentialSecret(ctx context.Context, credentials platformv1alpha1.RegistryCredential, log logr.Logger) error {
+	existingSecret := &corev1.Secret{}
+	if err := r.Get(ctx, client.ObjectKey{Namespace: credentials.Namespace, Name: credentials.GetPasswordSecretName()}, existingSecret); err != nil {
 		if apierrors.IsNotFound(err) {
+			log.Info("creating new registry credential secret")
 			return r.createSecret(ctx, credentials)
 		}
 		return err
+	}
+
+	return r.updateSecret(ctx, log, credentials, existingSecret)
+}
+
+func (r *RegistryCredentialsReconciler) updateSecret(ctx context.Context, log logr.Logger, credentials platformv1alpha1.RegistryCredential, secret *corev1.Secret) error {
+	if secret.Data == nil {
+		return fmt.Errorf("secret data can not be nil")
+	}
+
+	existingAuths := string(secret.Data[dockerconfigjson])
+	expectedAuths, err := r.genSecretAuths(ctx, credentials)
+	if err != nil {
+		return err
+	}
+	if existingAuths != expectedAuths {
+		secret.Data[dockerconfigjson] = []byte(expectedAuths)
+		log.Info("updating registry credential secret")
+		return r.Update(ctx, secret)
 	}
 
 	return nil
@@ -107,9 +135,19 @@ func (r *RegistryCredentialsReconciler) createSecret(ctx context.Context, creden
 		Type: "kubernetes.io/dockerconfigjson",
 	}
 
+	auths, err := r.genSecretAuths(ctx, credentials)
+	if err != nil {
+		return err
+	}
+	secret.Data = map[string][]byte{dockerconfigjson: []byte(auths)}
+
+	return r.Create(ctx, secret)
+}
+
+func (r *RegistryCredentialsReconciler) genSecretAuths(ctx context.Context, credentials platformv1alpha1.RegistryCredential) (string, error) {
 	passwordSecret := &corev1.Secret{}
 	if err := r.Get(ctx, client.ObjectKey{Namespace: credentials.Namespace, Name: credentials.Spec.PasswordSecretRef.Name}, passwordSecret); err != nil {
-		return err
+		return "", err
 	}
 	password := passwordSecret.Data[credentials.Spec.PasswordSecretRef.Key]
 
@@ -127,12 +165,10 @@ func (r *RegistryCredentialsReconciler) createSecret(ctx context.Context, creden
 
 	rawAuths, err := json.Marshal(a)
 	if err != nil {
-		return err
+		return "", err
 	}
 	auths := base64.StdEncoding.EncodeToString(rawAuths)
-	secret.Data = map[string][]byte{".dockerconfigjson": []byte(auths)}
-
-	return r.Create(ctx, secret)
+	return auths, nil
 }
 
 func (r *RegistryCredentialsReconciler) deleteRegistryCredentialSecret(ctx context.Context, credentials platformv1alpha1.RegistryCredential) error {
@@ -145,9 +181,36 @@ func (r *RegistryCredentialsReconciler) deleteRegistryCredentialSecret(ctx conte
 	return r.Delete(ctx, secret)
 }
 
+// requestFromSecret returns a reconcile.Request for the credential registry if the secret is a password reference.
+func requestFromSecret(c client.Client) handler.EventHandler {
+	return handler.EnqueueRequestsFromMapFunc(func(mo client.Object) []reconcile.Request {
+		secret, ok := mo.(*corev1.Secret)
+		if !ok {
+			err := fmt.Errorf("object was not a secret but a %T", mo)
+			utilruntime.HandleError(err)
+			return nil
+		}
+
+		registrycredentials := &platformv1alpha1.RegistryCredentialList{}
+		if err := c.List(context.Background(), registrycredentials, client.InNamespace(secret.Namespace)); err != nil {
+			utilruntime.HandleError(err)
+			return nil
+		}
+
+		for _, cred := range registrycredentials.Items {
+			if cred.Spec.PasswordSecretRef.Name == secret.Name {
+				return []reconcile.Request{{NamespacedName: types.NamespacedName{Name: cred.Name, Namespace: cred.Namespace}}}
+			}
+		}
+
+		return nil
+	})
+}
+
 // SetupWithManager sets up the controller with the Manager.
 func (r *RegistryCredentialsReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&platformv1alpha1.RegistryCredential{}).
+		Watches(&source.Kind{Type: &corev1.Secret{}}, requestFromSecret(mgr.GetClient())).
 		Complete(r)
 }
