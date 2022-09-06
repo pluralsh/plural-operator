@@ -22,7 +22,6 @@ import (
 
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -41,14 +40,9 @@ func (c *ConfigMapRedeployReconciler) Reconcile(ctx context.Context, req ctrl.Re
 	log := c.Log.WithValues("reconcile", req.NamespacedName)
 
 	configMap := &corev1.ConfigMap{}
-	err := c.Client.Get(ctx, req.NamespacedName, configMap)
-	if errors.IsNotFound(err) {
-		log.Error(nil, "could not find configmap")
-		return reconcile.Result{}, nil
-	}
-
-	if err != nil {
-		return reconcile.Result{}, fmt.Errorf("could not fetch ConfigMap: %+v", err)
+	if err := c.Client.Get(ctx, req.NamespacedName, configMap); err != nil {
+		log.Error(err, "Failed to fetch config map")
+		return ctrl.Result{}, client.IgnoreNotFound(err)
 	}
 
 	svc, err := redeployment.NewService(redeployment.ResourceConfigMap, c.Client, configMap)
@@ -57,13 +51,13 @@ func (c *ConfigMapRedeployReconciler) Reconcile(ctx context.Context, req ctrl.Re
 		return reconcile.Result{}, err
 	}
 
-	if !svc.IsControlled() {
-		return reconcile.Result{}, nil
+	if !svc.HasAnnotation() {
+		log.Info("update config map annotation")
+		return reconcile.Result{}, svc.UpdateAnnotation()
 	}
 
-	if !svc.HasAnnotation() {
-		log.Info("updating config map with new sha")
-		return reconcile.Result{}, svc.UpdateAnnotation()
+	if !svc.IsControlled() {
+		return reconcile.Result{}, nil
 	}
 
 	if svc.ShouldDeletePods() {

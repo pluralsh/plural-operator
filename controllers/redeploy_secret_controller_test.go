@@ -54,7 +54,7 @@ func TestReconcileSecret(t *testing.T) {
 		expectedSHAAnnotation bool
 	}{
 		{
-			name:            "scenario 1: no matching pods, don't add SHA annotation",
+			name:            "scenario 1: no matching pods",
 			secretNamespace: "test",
 			secretName:      "testsecret",
 			existingObjects: []ctrlruntimeclient.Object{
@@ -67,6 +67,7 @@ func TestReconcileSecret(t *testing.T) {
 				},
 				genPodWithSecretVolume("pod1", "test", "somesecret"),
 			},
+
 			expectedPods: []string{"pod1"},
 		},
 		{
@@ -137,10 +138,8 @@ func TestReconcileSecret(t *testing.T) {
 			err = fakeClient.Get(ctx, client.ObjectKey{Name: test.secretName, Namespace: test.secretNamespace}, secret)
 			assert.NoError(t, err)
 
-			if test.expectedSHAAnnotation {
-				_, shaAnnotation := secret.Annotations[redeployment.ShaAnnotation]
-				assert.True(t, shaAnnotation, "expected SHA annotation")
-			}
+			_, shaAnnotation := secret.Annotations[redeployment.ShaAnnotation]
+			assert.True(t, shaAnnotation, "expected SHA annotation")
 
 			existingPods := &corev1.PodList{}
 			labelSelector, err := redeployment.RedeployLabelSelector()
@@ -154,7 +153,7 @@ func TestReconcileSecret(t *testing.T) {
 			sort.Strings(existingPodNames)
 			sort.Strings(test.expectedPods)
 
-			assert.Equal(t, existingPodNames, test.expectedPods)
+			assert.Equal(t, test.expectedPods, existingPodNames)
 		})
 	}
 }

@@ -60,13 +60,13 @@ func (r *RedeploySecretReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		return reconcile.Result{}, err
 	}
 
-	if !svc.IsControlled() {
-		return reconcile.Result{}, nil
+	if !svc.HasAnnotation() {
+		log.Info("update secret annotation")
+		return reconcile.Result{}, svc.UpdateAnnotation()
 	}
 
-	if !svc.HasAnnotation() {
-		log.Info("updating secret with new sha")
-		return reconcile.Result{}, svc.UpdateAnnotation()
+	if !svc.IsControlled() {
+		return reconcile.Result{}, nil
 	}
 
 	if svc.ShouldDeletePods() {

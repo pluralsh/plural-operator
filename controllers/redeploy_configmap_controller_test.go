@@ -46,15 +46,14 @@ func init() {
 
 func TestReconcileConfigMap(t *testing.T) {
 	tests := []struct {
-		name                  string
-		secretName            string
-		secretNamespace       string
-		expectedPods          []string
-		existingObjects       []ctrlruntimeclient.Object
-		expectedSHAAnnotation bool
+		name            string
+		secretName      string
+		secretNamespace string
+		expectedPods    []string
+		existingObjects []ctrlruntimeclient.Object
 	}{
 		{
-			name:            "scenario 1: no matching pods, don't add SHA annotation",
+			name:            "scenario 1: no matching pods",
 			secretNamespace: "test",
 			secretName:      "testconfig",
 			existingObjects: []ctrlruntimeclient.Object{
@@ -137,10 +136,8 @@ func TestReconcileConfigMap(t *testing.T) {
 			err = fakeClient.Get(ctx, client.ObjectKey{Name: test.secretName, Namespace: test.secretNamespace}, config)
 			assert.NoError(t, err)
 
-			if test.expectedSHAAnnotation {
-				_, shaAnnotation := config.Annotations[redeployment.ShaAnnotation]
-				assert.True(t, shaAnnotation, "expected SHA annotation")
-			}
+			_, shaAnnotation := config.Annotations[redeployment.ShaAnnotation]
+			assert.True(t, shaAnnotation, "expected SHA annotation")
 
 			existingPods := &corev1.PodList{}
 			labelSelector, err := redeployment.RedeployLabelSelector()
