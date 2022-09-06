@@ -24,6 +24,7 @@ import (
 	"sigs.k8s.io/yaml"
 
 	"github.com/go-logr/logr"
+	"github.com/pluralsh/plural-operator/services/redeployment"
 	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
@@ -59,6 +60,11 @@ func (oi *OAuthInjector) Handle(ctx context.Context, req admission.Request) admi
 	}
 
 	log.Info("Injecting sidecar...")
+
+	if pod.Labels == nil {
+		pod.Labels = map[string]string{}
+	}
+	pod.Labels[redeployment.RedeployLabel] = "true"
 
 	secretRef := &[]corev1.EnvFromSource{
 		{
