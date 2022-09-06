@@ -1,3 +1,6 @@
+//go:build suit
+// +build suit
+
 /*
 Copyright 2021.
 
