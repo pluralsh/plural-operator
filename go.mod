@@ -6,7 +6,7 @@ require (
 	github.com/cenkalti/backoff v2.2.1+incompatible
 	github.com/go-logr/logr v0.4.0
 	github.com/go-resty/resty/v2 v2.6.0
-	github.com/onsi/ginkgo v1.16.4
+	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.13.0
 	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.51.1
 	golang.org/x/net v0.0.0-20210520170846-37e1c6afe023 // indirect
