@@ -1,6 +1,3 @@
-//go:build unit
-// +build unit
-
 /*
 Copyright 2022.
 
@@ -137,9 +134,6 @@ func TestReconcileSecret(t *testing.T) {
 			secret := &corev1.Secret{}
 			err = fakeClient.Get(ctx, client.ObjectKey{Name: test.secretName, Namespace: test.secretNamespace}, secret)
 			assert.NoError(t, err)
-
-			_, shaAnnotation := secret.Annotations[redeployment.ShaAnnotation]
-			assert.True(t, shaAnnotation, "expected SHA annotation")
 
 			existingPods := &corev1.PodList{}
 			labelSelector, err := redeployment.RedeployLabelSelector()

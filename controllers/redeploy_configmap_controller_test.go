@@ -1,6 +1,3 @@
-//go:build unit
-// +build unit
-
 /*
 Copyright 2022.
 
@@ -135,9 +132,6 @@ func TestReconcileConfigMap(t *testing.T) {
 			config := &corev1.ConfigMap{}
 			err = fakeClient.Get(ctx, client.ObjectKey{Name: test.secretName, Namespace: test.secretNamespace}, config)
 			assert.NoError(t, err)
-
-			_, shaAnnotation := config.Annotations[redeployment.ShaAnnotation]
-			assert.True(t, shaAnnotation, "expected SHA annotation")
 
 			existingPods := &corev1.PodList{}
 			labelSelector, err := redeployment.RedeployLabelSelector()

@@ -22,11 +22,14 @@ import (
 
 	"github.com/go-logr/logr"
 	"github.com/pluralsh/plural-operator/services/redeployment"
+
 	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
+	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
 // RedeploySecretReconciler reconciles a Secret object for specified applications
@@ -50,8 +53,11 @@ func (r *RedeploySecretReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 
 	secret := &corev1.Secret{}
 	if err := r.Get(ctx, req.NamespacedName, secret); err != nil {
+		if apierrors.IsNotFound(err) {
+			return ctrl.Result{}, nil
+		}
 		log.Error(err, "Failed to fetch secret")
-		return ctrl.Result{}, client.IgnoreNotFound(err)
+		return ctrl.Result{}, err
 	}
 
 	svc, err := redeployment.NewService(redeployment.ResourceSecret, r.Client, secret)
@@ -60,13 +66,13 @@ func (r *RedeploySecretReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		return reconcile.Result{}, err
 	}
 
+	if !svc.IsControlled() {
+		return reconcile.Result{}, nil
+	}
+
 	if !svc.HasAnnotation() {
 		log.Info("update secret annotation")
 		return reconcile.Result{}, svc.UpdateAnnotation()
-	}
-
-	if !svc.IsControlled() {
-		return reconcile.Result{}, nil
 	}
 
 	if svc.ShouldDeletePods() {
@@ -89,5 +95,6 @@ func (r *RedeploySecretReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 func (r *RedeploySecretReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&corev1.Secret{}).
+		Watches(&source.Kind{Type: &corev1.Pod{}}, redeployment.RequestSecretFromPod(mgr.GetClient())).
 		Complete(r)
 }

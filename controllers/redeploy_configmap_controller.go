@@ -21,13 +21,15 @@ import (
 	"fmt"
 
 	"github.com/go-logr/logr"
+	"github.com/pluralsh/plural-operator/services/redeployment"
+
 	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-
-	"github.com/pluralsh/plural-operator/services/redeployment"
+	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
 type ConfigMapRedeployReconciler struct {
@@ -41,8 +43,11 @@ func (c *ConfigMapRedeployReconciler) Reconcile(ctx context.Context, req ctrl.Re
 
 	configMap := &corev1.ConfigMap{}
 	if err := c.Client.Get(ctx, req.NamespacedName, configMap); err != nil {
+		if apierrors.IsNotFound(err) {
+			return ctrl.Result{}, nil
+		}
 		log.Error(err, "Failed to fetch config map")
-		return ctrl.Result{}, client.IgnoreNotFound(err)
+		return ctrl.Result{}, err
 	}
 
 	svc, err := redeployment.NewService(redeployment.ResourceConfigMap, c.Client, configMap)
@@ -51,13 +56,13 @@ func (c *ConfigMapRedeployReconciler) Reconcile(ctx context.Context, req ctrl.Re
 		return reconcile.Result{}, err
 	}
 
+	if !svc.IsControlled() {
+		return reconcile.Result{}, nil
+	}
+
 	if !svc.HasAnnotation() {
 		log.Info("update config map annotation")
 		return reconcile.Result{}, svc.UpdateAnnotation()
-	}
-
-	if !svc.IsControlled() {
-		return reconcile.Result{}, nil
 	}
 
 	if svc.ShouldDeletePods() {
@@ -80,5 +85,6 @@ func (c *ConfigMapRedeployReconciler) Reconcile(ctx context.Context, req ctrl.Re
 func (c *ConfigMapRedeployReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&corev1.ConfigMap{}).
+		Watches(&source.Kind{Type: &corev1.Pod{}}, redeployment.RequestConfigMapFromPod(mgr.GetClient())).
 		Complete(c)
 }
