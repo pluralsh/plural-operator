@@ -23,6 +23,7 @@ import (
 
 	"github.com/go-logr/logr"
 	"github.com/go-resty/resty/v2"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -65,8 +66,11 @@ func (r *LicenseReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ct
 
 	var license platformv1alpha1.License
 	if err := r.Get(ctx, req.NamespacedName, &license); err != nil {
+		if apierrors.IsNotFound(err) {
+			return ctrl.Result{}, nil
+		}
 		log.Error(err, "Failed to fetch license resource")
-		return ctrl.Result{}, client.IgnoreNotFound(err)
+		return ctrl.Result{}, err
 	}
 
 	var secret corev1.Secret

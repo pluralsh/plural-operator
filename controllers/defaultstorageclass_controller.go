@@ -21,6 +21,7 @@ import (
 
 	"github.com/go-logr/logr"
 	storagev1 "k8s.io/api/storage/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	apierrs "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -62,8 +63,11 @@ func (r *DefaultStorageClassReconciler) Reconcile(ctx context.Context, req ctrl.
 	defaultstorageInstance := &platformv1alpha1.DefaultStorageClass{}
 
 	if err := r.Get(ctx, req.NamespacedName, defaultstorageInstance); err != nil {
+		if apierrors.IsNotFound(err) {
+			return ctrl.Result{}, nil
+		}
 		log.Error(err, "could not fetch default storage class resource")
-		return ctrl.Result{}, client.IgnoreNotFound(err)
+		return ctrl.Result{}, err
 	}
 
 	var foundStorageClass storagev1.StorageClass
