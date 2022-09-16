@@ -79,7 +79,7 @@ func (r *PodSweeperReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 
 	// If the condition is not set yet then set lastNotReadyTimestamp to Now() to enforce the check for later
 	now := Now()
-	lastNotReadyTimestamp := metav1.Time{now}
+	lastNotReadyTimestamp := metav1.Time{Time: now}
 	for _, condition := range pod.Status.Conditions {
 		if condition.Type == corev1.PodReady {
 			lastNotReadyTimestamp = condition.LastTransitionTime
