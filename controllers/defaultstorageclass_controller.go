@@ -28,7 +28,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
-	platformv1alpha1 "github.com/pluralsh/plural-operator/api/platform/v1alpha1"
+	platformv1alpha1 "github.com/pluralsh/plural-operator/apis/platform/v1alpha1"
 	"github.com/pluralsh/plural-operator/resources"
 )
 

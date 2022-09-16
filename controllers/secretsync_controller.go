@@ -33,7 +33,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
-	platformv1alpha1 "github.com/pluralsh/plural-operator/api/platform/v1alpha1"
+	platformv1alpha1 "github.com/pluralsh/plural-operator/apis/platform/v1alpha1"
 )
 
 // SecretSyncReconciler reconciles a SecretSync object

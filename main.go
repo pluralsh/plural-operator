@@ -32,15 +32,15 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	"github.com/pluralsh/plural-operator/alertmanager"
-	platformv1alpha1 "github.com/pluralsh/plural-operator/api/platform/v1alpha1"
+	platformv1alpha1 "github.com/pluralsh/plural-operator/apis/platform/v1alpha1"
 	"github.com/pluralsh/plural-operator/controllers"
 
 	amv1alpha1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1alpha1"
 
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
-	platformhooks "github.com/pluralsh/plural-operator/api/platform/v1alpha1/hooks"
-	securityhooks "github.com/pluralsh/plural-operator/api/security/v1alpha1/hooks"
+	platformhooks "github.com/pluralsh/plural-operator/apis/platform/v1alpha1/hooks"
+	securityhooks "github.com/pluralsh/plural-operator/apis/security/v1alpha1/hooks"
 	//+kubebuilder:scaffold:imports
 )
 

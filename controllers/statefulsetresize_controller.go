@@ -34,7 +34,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 
-	platformv1alpha1 "github.com/pluralsh/plural-operator/api/platform/v1alpha1"
+	platformv1alpha1 "github.com/pluralsh/plural-operator/apis/platform/v1alpha1"
 )
 
 // StatefulSetResizeReconciler reconciles a StatefulSetResize object

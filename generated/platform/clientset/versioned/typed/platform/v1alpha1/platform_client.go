@@ -18,7 +18,7 @@ limitations under the License.
 package v1alpha1
 
 import (
-	v1alpha1 "github.com/pluralsh/plural-operator/api/platform/v1alpha1"
+	v1alpha1 "github.com/pluralsh/plural-operator/apis/platform/v1alpha1"
 	"github.com/pluralsh/plural-operator/generated/platform/clientset/versioned/scheme"
 	rest "k8s.io/client-go/rest"
 )
