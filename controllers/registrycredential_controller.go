@@ -22,9 +22,8 @@ import (
 	"encoding/json"
 	"fmt"
 
-	platformv1alpha1 "github.com/pluralsh/plural-operator/apis/platform/v1alpha1"
-
 	"github.com/go-logr/logr"
+	platformv1alpha1 "github.com/pluralsh/plural-operator/apis/platform/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -72,8 +71,11 @@ func (r *RegistryCredentialsReconciler) Reconcile(ctx context.Context, req ctrl.
 
 	var credentials platformv1alpha1.RegistryCredential
 	if err := r.Get(ctx, req.NamespacedName, &credentials); err != nil {
+		if apierrors.IsNotFound(err) {
+			return ctrl.Result{}, nil
+		}
 		log.Error(err, "failed to fetch registry credentials")
-		return ctrl.Result{}, client.IgnoreNotFound(err)
+		return ctrl.Result{}, err
 	}
 
 	if credentials.DeletionTimestamp != nil {

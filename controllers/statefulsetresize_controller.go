@@ -22,10 +22,12 @@ import (
 	"time"
 
 	"github.com/go-logr/logr"
+	platformv1alpha1 "github.com/pluralsh/plural-operator/apis/platform/v1alpha1"
 	"github.com/pluralsh/plural-operator/resources"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	storagev1 "k8s.io/api/storage/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -33,8 +35,6 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
-
-	platformv1alpha1 "github.com/pluralsh/plural-operator/apis/platform/v1alpha1"
 )
 
 // StatefulSetResizeReconciler reconciles a StatefulSetResize object
@@ -72,8 +72,11 @@ func (r *StatefulSetResizeReconciler) Reconcile(ctx context.Context, req ctrl.Re
 
 	var resize platformv1alpha1.StatefulSetResize
 	if err := r.Get(ctx, req.NamespacedName, &resize); err != nil {
+		if apierrors.IsNotFound(err) {
+			return ctrl.Result{}, nil
+		}
 		log.Error(err, "Failed to fetch resize resource")
-		return ctrl.Result{}, client.IgnoreNotFound(err)
+		return ctrl.Result{}, err
 	}
 
 	quant, err := resource.ParseQuantity(resize.Spec.Size)

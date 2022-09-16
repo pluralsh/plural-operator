@@ -22,22 +22,24 @@ import (
 
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
-	apierrors "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-// PodReconciler reconciles a Namespace object
-type PodReconciler struct {
-	client.Client
-	Log    logr.Logger
-	Scheme *runtime.Scheme
-}
+// Now stubbed out to allow testing.
+var Now = time.Now
 
-const (
-	expiryAnnotation = "platform.plural.sh/expire-after"
-)
+const defaultSweepAfter = 2 * time.Hour
+
+// PodSweeperReconciler reconciles a Pod object
+type PodSweeperReconciler struct {
+	client.Client
+	Log         logr.Logger
+	Scheme      *runtime.Scheme
+	DeleteAfter time.Duration
+}
 
 //+kubebuilder:rbac:groups="",resources=pods,verbs=get;list;delete
 
@@ -49,51 +51,58 @@ const (
 // the user.
 //
 // For more details, check Reconcile and its Result here:
-// - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.7.2/pkg/reconcile
-func (r *PodReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+// - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.7.2/pkg/reconcilee
+func (r *PodSweeperReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := r.Log.WithValues("pod", req.NamespacedName)
+
+	if r.DeleteAfter == 0 {
+		r.DeleteAfter = defaultSweepAfter
+	}
 
 	var pod corev1.Pod
 	if err := r.Get(ctx, req.NamespacedName, &pod); err != nil {
-		if apierrors.IsNotFound(err) {
-			return ctrl.Result{}, nil
+		return ctrl.Result{}, client.IgnoreNotFound(err)
+	}
+
+	// Get a standalone pod
+	// Skip all k8s workflow pods. The owner reference for the workflow pod is always set with the specific kind: ReplicaSet, DaemonSet
+	if pod.OwnerReferences != nil {
+		return ctrl.Result{}, nil
+	}
+
+	// Skip running pods, and check them later
+	if pod.Status.Phase == corev1.PodRunning {
+		return ctrl.Result{
+			RequeueAfter: r.DeleteAfter,
+		}, nil
+	}
+
+	// If the condition is not set yet then set lastNotReadyTimestamp to Now() to enforce the check for later
+	now := Now()
+	lastNotReadyTimestamp := metav1.Time{now}
+	for _, condition := range pod.Status.Conditions {
+		if condition.Type == corev1.PodReady {
+			lastNotReadyTimestamp = condition.LastTransitionTime
 		}
-		log.Error(err, "Failed to fetch pod")
-		return ctrl.Result{}, err
 	}
 
-	if pod.Annotations == nil {
-		return ctrl.Result{}, nil
-	}
-
-	expiry, ok := pod.Annotations[expiryAnnotation]
-	if !ok {
-		return ctrl.Result{}, nil
-	}
-
-	log.Info("Found expiry annotation", "expiry", expiry)
-	dur, err := time.ParseDuration(expiry)
-	if err != nil {
-		log.Error(err, "Failed to parse expiry duration")
-		return ctrl.Result{}, nil
-	}
-
-	created := pod.CreationTimestamp
-	expiresAt := created.Add(dur)
-	if expiresAt.Before(time.Now()) {
+	notReadyDuration := now.Sub(lastNotReadyTimestamp.Time)
+	checkDuration := r.DeleteAfter
+	if notReadyDuration >= checkDuration {
 		if err := r.Delete(ctx, &pod); err != nil {
 			log.Error(err, "Failed to delete pod")
 			return ctrl.Result{}, client.IgnoreNotFound(err)
 		}
-
 		return ctrl.Result{}, nil
 	}
 
-	return ctrl.Result{RequeueAfter: time.Until(expiresAt)}, nil
+	repeatAfter := checkDuration.Truncate(notReadyDuration)
+	return ctrl.Result{RequeueAfter: repeatAfter + time.Minute}, nil
 }
 
 // SetupWithManager sets up the controller with the Manager.
-func (r *PodReconciler) SetupWithManager(mgr ctrl.Manager) error {
+func (r *PodSweeperReconciler) SetupWithManager(mgr ctrl.Manager) error {
+	mgr.GetControllerOptions()
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&corev1.Pod{}).
 		Complete(r)
