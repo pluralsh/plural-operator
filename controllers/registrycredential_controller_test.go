@@ -21,7 +21,7 @@ import (
 	"encoding/base64"
 	"testing"
 
-	"github.com/pluralsh/plural-operator/api/platform/v1alpha1"
+	"github.com/pluralsh/plural-operator/apis/platform/v1alpha1"
 	"github.com/stretchr/testify/assert"
 
 	corev1 "k8s.io/api/core/v1"

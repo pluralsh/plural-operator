@@ -21,7 +21,7 @@ import (
 	"context"
 	time "time"
 
-	platformv1alpha1 "github.com/pluralsh/plural-operator/api/platform/v1alpha1"
+	platformv1alpha1 "github.com/pluralsh/plural-operator/apis/platform/v1alpha1"
 	versioned "github.com/pluralsh/plural-operator/generated/platform/clientset/versioned"
 	internalinterfaces "github.com/pluralsh/plural-operator/generated/platform/informers/externalversions/internalinterfaces"
 	v1alpha1 "github.com/pluralsh/plural-operator/generated/platform/listers/platform/v1alpha1"

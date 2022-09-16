@@ -15,8 +15,8 @@ limitations under the License.
 */
 
 // Package v1alpha1 contains API Schema definitions for the plural.sh v1alpha1 API group
-//+kubebuilder:object:generate=true
-//+groupName=platform.plural.sh
+// +kubebuilder:object:generate=true
+// +groupName=platform.plural.sh
 package v1alpha1
 
 import (

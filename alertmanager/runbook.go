@@ -1,7 +1,7 @@
 package alertmanager
 
 import (
-	platformv1alpha1 "github.com/pluralsh/plural-operator/api/platform/v1alpha1"
+	platformv1alpha1 "github.com/pluralsh/plural-operator/apis/platform/v1alpha1"
 )
 
 func removeAlert(alerts []*platformv1alpha1.RunbookAlertStatus, name string) []*platformv1alpha1.RunbookAlertStatus {

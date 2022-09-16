@@ -21,7 +21,7 @@ import (
 	"context"
 	"time"
 
-	v1alpha1 "github.com/pluralsh/plural-operator/api/platform/v1alpha1"
+	v1alpha1 "github.com/pluralsh/plural-operator/apis/platform/v1alpha1"
 	scheme "github.com/pluralsh/plural-operator/generated/platform/clientset/versioned/scheme"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	types "k8s.io/apimachinery/pkg/types"

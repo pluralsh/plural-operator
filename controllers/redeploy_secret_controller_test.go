@@ -24,7 +24,7 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/pluralsh/plural-operator/api/platform/v1alpha1"
+	"github.com/pluralsh/plural-operator/apis/platform/v1alpha1"
 	"github.com/pluralsh/plural-operator/services/redeployment"
 	"github.com/stretchr/testify/assert"
 
