@@ -182,11 +182,13 @@ func main() {
 	}
 
 	if err = (&controllers.ConfigMapRedeployReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
-		Log:    ctrl.Log.WithName("controllers").WithName("ConfigMapRedeploy"),
+		Client:             mgr.GetClient(),
+		Scheme:             mgr.GetScheme(),
+		Log:                ctrl.Log.WithName("controllers").WithName("OauthConfigMapRedeploy"),
+		ConfigMapName:      os.Getenv("PLURAL_OAUTH_SIDECAR_CONFIG_NAME"),
+		ConfigMapNamespace: os.Getenv("PLURAL_OAUTH_SIDECAR_CONFIG_NAMESPACE"),
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "ConfigMapRedeploy")
+		setupLog.Error(err, "unable to create controller", "controller", "OauthConfigMapRedeploy")
 		os.Exit(1)
 	}
 	if err = (&controllers.RedeploySecretReconciler{

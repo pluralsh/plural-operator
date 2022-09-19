@@ -1,6 +1,3 @@
-//go:build unit
-// +build unit
-
 /*
 Copyright 2022.
 
@@ -64,7 +61,7 @@ func TestReconcileConfigMap(t *testing.T) {
 					},
 					Data: map[string]string{"z": "a", "a": "z"},
 				},
-				genPodWithConfigMapVolume("pod1", "test", "someconfig"),
+				genPod("pod1", "test", false),
 			},
 			expectedPods: []string{"pod1"},
 		},
@@ -75,40 +72,17 @@ func TestReconcileConfigMap(t *testing.T) {
 			existingObjects: []ctrlruntimeclient.Object{
 				&corev1.ConfigMap{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:        "testconfig",
-						Namespace:   "test",
-						Annotations: map[string]string{redeployment.ShaAnnotation: "xyz"},
+						Name:      "testconfig",
+						Namespace: "test",
 					},
 					Data: map[string]string{"z": "a", "a": "z"},
 				},
-				genPodWithConfigMapVolume("pod1", "test", "someconfig"),
-				genPodWithConfigMapVolume("pod2", "test", "testconfig"),
-				genPodWithConfigMapVolume("pod3", "test", "someconfig"),
-				genPodWithConfigMapVolume("pod4", "test", "testconfig"),
+				genPod("pod1", "test1", true),
+				genPod("pod2", "test1", false),
+				genPod("pod3", "test2", true),
+				genPod("pod4", "test2", false),
 			},
-			expectedPods: []string{"pod1", "pod3"},
-		},
-		{
-			name:            "scenario 3: delete pods with config reference and volumes",
-			secretNamespace: "test",
-			secretName:      "testconfig",
-			existingObjects: []ctrlruntimeclient.Object{
-				&corev1.ConfigMap{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:        "testconfig",
-						Namespace:   "test",
-						Annotations: map[string]string{redeployment.ShaAnnotation: "xyz"},
-					},
-					Data: map[string]string{"z": "a", "a": "z"},
-				},
-				genPodWithConfigMapVolume("pod1", "test", "someconfig"),
-				genPodWithConfigMapVolume("pod2", "test", "testconfig"),
-				genPodWithConfigMapVolume("pod3", "test", "someconfig"),
-				genPodWithConfigMapVolume("pod4", "test", "testconfig"),
-				genPodWithConfigRef("pod5", "test", "testconfig"),
-				genPodWithConfigRef("pod6", "test", "someconfig"),
-			},
-			expectedPods: []string{"pod1", "pod3", "pod6"},
+			expectedPods: []string{"pod2", "pod4"},
 		},
 	}
 
@@ -136,13 +110,9 @@ func TestReconcileConfigMap(t *testing.T) {
 			err = fakeClient.Get(ctx, client.ObjectKey{Name: test.secretName, Namespace: test.secretNamespace}, config)
 			assert.NoError(t, err)
 
-			_, shaAnnotation := config.Annotations[redeployment.ShaAnnotation]
-			assert.True(t, shaAnnotation, "expected SHA annotation")
-
 			existingPods := &corev1.PodList{}
-			labelSelector, err := redeployment.RedeployLabelSelector()
-			assert.NoError(t, err)
-			err = fakeClient.List(ctx, existingPods, &client.ListOptions{Namespace: test.secretNamespace, LabelSelector: labelSelector})
+
+			err = fakeClient.List(ctx, existingPods)
 			assert.NoError(t, err)
 			existingPodNames := []string{}
 			for _, pod := range existingPods.Items {
@@ -156,50 +126,16 @@ func TestReconcileConfigMap(t *testing.T) {
 	}
 }
 
-func genPodWithConfigMapVolume(podName, podNamespace, configName string) *corev1.Pod {
-	return &corev1.Pod{
+func genPod(podName, podNamespace string, setRedeployLabel bool) *corev1.Pod {
+	pod := &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      podName,
 			Namespace: podNamespace,
-			Labels:    map[string]string{redeployment.RedeployLabel: "true"},
-		},
-		Spec: corev1.PodSpec{
-			Volumes: []corev1.Volume{
-				{
-					Name: configName,
-					VolumeSource: corev1.VolumeSource{ConfigMap: &corev1.ConfigMapVolumeSource{
-						LocalObjectReference: corev1.LocalObjectReference{
-							Name: configName,
-						},
-					},
-					},
-				},
-			},
+			Labels:    map[string]string{},
 		},
 	}
-}
-
-func genPodWithConfigRef(podName, podNamespace, configName string) *corev1.Pod {
-	return &corev1.Pod{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      podName,
-			Namespace: podNamespace,
-			Labels:    map[string]string{redeployment.RedeployLabel: "true"},
-		},
-		Spec: corev1.PodSpec{
-			Containers: []corev1.Container{
-				{
-					EnvFrom: []corev1.EnvFromSource{
-						{
-							ConfigMapRef: &corev1.ConfigMapEnvSource{
-								LocalObjectReference: corev1.LocalObjectReference{
-									Name: configName,
-								},
-							},
-						},
-					},
-				},
-			},
-		},
+	if setRedeployLabel {
+		pod.Labels[redeployment.RedeployLabel] = "true"
 	}
+	return pod
 }
