@@ -19,7 +19,6 @@ package hooks
 import (
 	"context"
 	"encoding/json"
-	"io/ioutil"
 	"net/http"
 	"time"
 
@@ -159,18 +158,4 @@ func (oi *OAuthInjector) Handle(ctx context.Context, req admission.Request) admi
 func (oi *OAuthInjector) InjectDecoder(d *admission.Decoder) error {
 	oi.decoder = d
 	return nil
-}
-
-func loadConfig(configFile string) (*Config, error) {
-	data, err := ioutil.ReadFile(configFile)
-	if err != nil {
-		return nil, err
-	}
-
-	var cfg Config
-	if err := yaml.Unmarshal(data, &cfg); err != nil {
-		return nil, err
-	}
-
-	return &cfg, nil
 }
