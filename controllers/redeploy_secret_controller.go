@@ -18,14 +18,21 @@ package controllers
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
+	"sort"
 
 	"github.com/go-logr/logr"
 	"github.com/pluralsh/plural-operator/services/redeployment"
+
 	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+	"sigs.k8s.io/controller-runtime/pkg/event"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
 
@@ -50,44 +57,80 @@ func (r *RedeploySecretReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 
 	secret := &corev1.Secret{}
 	if err := r.Get(ctx, req.NamespacedName, secret); err != nil {
+		if apierrors.IsNotFound(err) {
+			return ctrl.Result{}, nil
+		}
 		log.Error(err, "Failed to fetch secret")
-		return ctrl.Result{}, client.IgnoreNotFound(err)
+		return ctrl.Result{}, err
 	}
 
-	svc, err := redeployment.NewService(redeployment.ResourceSecret, r.Client, secret)
+	svc, err := redeployment.NewSecretService(r.Client, secret)
 	if err != nil {
 		log.Error(nil, "could not create Secret service")
 		return reconcile.Result{}, err
-	}
-
-	if !svc.HasAnnotation() {
-		log.Info("update secret annotation")
-		return reconcile.Result{}, svc.UpdateAnnotation()
 	}
 
 	if !svc.IsControlled() {
 		return reconcile.Result{}, nil
 	}
 
-	if svc.ShouldDeletePods() {
-		log.Info("deleting Pods")
-		err = svc.DeletePods()
-		if err != nil {
-			return reconcile.Result{}, fmt.Errorf("could not delete pods: %w", err)
-		}
-
-		err = svc.UpdateAnnotation()
-		if err != nil {
-			return reconcile.Result{}, fmt.Errorf("could not update annotation: %w", err)
-		}
+	log.Info("deleting Pods")
+	err = svc.DeletePods()
+	if err != nil {
+		return reconcile.Result{}, fmt.Errorf("could not delete pods: %w", err)
 	}
 
 	return ctrl.Result{}, nil
+}
+
+func getSecretSHA(s *corev1.Secret) string {
+	sha := sha256.New()
+	dataKeys := make([]string, 0)
+
+	for key := range s.Data {
+		dataKeys = append(dataKeys, key)
+	}
+
+	sort.Strings(dataKeys)
+
+	for _, key := range dataKeys {
+		sha.Write(s.Data[key])
+	}
+
+	return hex.EncodeToString(sha.Sum(nil))
+}
+
+func updateSecretEventsOnly() predicate.Predicate {
+	return predicate.Funcs{
+		CreateFunc: func(e event.CreateEvent) bool {
+			return false
+		},
+		UpdateFunc: func(e event.UpdateEvent) bool {
+			oldSecret, ok := e.ObjectOld.(*corev1.Secret)
+			if !ok {
+				return false
+			}
+			newSecret, ok := e.ObjectNew.(*corev1.Secret)
+			if !ok {
+				return false
+			}
+			oldSHA := getSecretSHA(oldSecret)
+			newSHA := getSecretSHA(newSecret)
+			return oldSHA != newSHA
+		},
+		DeleteFunc: func(e event.DeleteEvent) bool {
+			return false
+		},
+		GenericFunc: func(e event.GenericEvent) bool {
+			return false
+		},
+	}
 }
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *RedeploySecretReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&corev1.Secret{}).
+		WithEventFilter(updateSecretEventsOnly()).
 		Complete(r)
 }

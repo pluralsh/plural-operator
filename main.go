@@ -63,12 +63,10 @@ func main() {
 	var enableLeaderElection bool
 	var probeAddr string
 	// var webhookAddr string
-	var oauthSidecarConfig string
 
 	flag.StringVar(&metricsAddr, "metrics-bind-address", ":8080", "The address the metric endpoint binds to.")
 	flag.StringVar(&probeAddr, "health-probe-bind-address", ":8081", "The address the probe endpoint binds to.")
 	// flag.StringVar(&webhookAddr, "webhook-bind-address", ":3000", "The address the webhook endpoint binds to.")
-	flag.StringVar(&oauthSidecarConfig, "oauth-sidecar-config-path", "/tmp/k8s-webhook-server/config/oauth-sidecar-config.yaml", "OAuth Webhook sidecar config")
 	flag.BoolVar(&enableLeaderElection, "leader-elect", false,
 		"Enable leader election for controller manager. "+
 			"Enabling this will ensure there is only one active controller manager.")
@@ -182,11 +180,13 @@ func main() {
 	}
 
 	if err = (&controllers.ConfigMapRedeployReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
-		Log:    ctrl.Log.WithName("controllers").WithName("ConfigMapRedeploy"),
+		Client:             mgr.GetClient(),
+		Scheme:             mgr.GetScheme(),
+		Log:                ctrl.Log.WithName("controllers").WithName("OauthConfigMapRedeploy"),
+		ConfigMapName:      os.Getenv("PLURAL_OAUTH_SIDECAR_CONFIG_NAME"),
+		ConfigMapNamespace: os.Getenv("PLURAL_OAUTH_SIDECAR_CONFIG_NAMESPACE"),
 	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "ConfigMapRedeploy")
+		setupLog.Error(err, "unable to create controller", "controller", "OauthConfigMapRedeploy")
 		os.Exit(1)
 	}
 	if err = (&controllers.RedeploySecretReconciler{
@@ -242,10 +242,11 @@ func main() {
 			"/mutate-security-plural-sh-v1alpha1-oauthinjector",
 			&webhook.Admission{
 				Handler: &securityhooks.OAuthInjector{
-					Name:       "oauth2-proxy",
-					Log:        ctrl.Log.WithName("webhooks").WithName("oauth-injector"),
-					Client:     mgr.GetClient(),
-					ConfigPath: oauthSidecarConfig,
+					Name:               "oauth2-proxy",
+					Log:                ctrl.Log.WithName("webhooks").WithName("oauth-injector"),
+					Client:             mgr.GetClient(),
+					ConfigMapName:      os.Getenv("PLURAL_OAUTH_SIDECAR_CONFIG_NAME"),
+					ConfigMapNamespace: os.Getenv("PLURAL_OAUTH_SIDECAR_CONFIG_NAMESPACE"),
 				},
 			},
 		)

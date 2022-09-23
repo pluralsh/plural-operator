@@ -1,6 +1,3 @@
-//go:build unit
-// +build unit
-
 /*
 Copyright 2022.
 
@@ -77,9 +74,8 @@ func TestReconcileSecret(t *testing.T) {
 			existingObjects: []ctrlruntimeclient.Object{
 				&corev1.Secret{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:        "testsecret",
-						Namespace:   "test",
-						Annotations: map[string]string{redeployment.ShaAnnotation: "xyz"},
+						Name:      "testsecret",
+						Namespace: "test",
 					},
 					Data: map[string][]byte{"z": {1, 2, 3}, "a": {4, 5, 6}},
 				},
@@ -89,28 +85,6 @@ func TestReconcileSecret(t *testing.T) {
 				genPodWithSecretVolume("pod4", "test", "testsecret"),
 			},
 			expectedPods: []string{"pod1", "pod3"},
-		},
-		{
-			name:            "scenario 3: delete pods with secret reference and volumes",
-			secretNamespace: "test",
-			secretName:      "testsecret",
-			existingObjects: []ctrlruntimeclient.Object{
-				&corev1.Secret{
-					ObjectMeta: metav1.ObjectMeta{
-						Name:        "testsecret",
-						Namespace:   "test",
-						Annotations: map[string]string{redeployment.ShaAnnotation: "xyz"},
-					},
-					Data: map[string][]byte{"z": {1, 2, 3}, "a": {4, 5, 6}},
-				},
-				genPodWithSecretVolume("pod1", "test", "somesecret"),
-				genPodWithSecretVolume("pod2", "test", "testsecret"),
-				genPodWithSecretVolume("pod3", "test", "somesecret"),
-				genPodWithSecretVolume("pod4", "test", "testsecret"),
-				genPodWithSecretRef("pod5", "test", "testsecret"),
-				genPodWithSecretRef("pod6", "test", "somesecret"),
-			},
-			expectedPods: []string{"pod1", "pod3", "pod6"},
 		},
 	}
 
@@ -138,9 +112,6 @@ func TestReconcileSecret(t *testing.T) {
 			err = fakeClient.Get(ctx, client.ObjectKey{Name: test.secretName, Namespace: test.secretNamespace}, secret)
 			assert.NoError(t, err)
 
-			_, shaAnnotation := secret.Annotations[redeployment.ShaAnnotation]
-			assert.True(t, shaAnnotation, "expected SHA annotation")
-
 			existingPods := &corev1.PodList{}
 			labelSelector, err := redeployment.RedeployLabelSelector()
 			assert.NoError(t, err)
@@ -158,47 +129,17 @@ func TestReconcileSecret(t *testing.T) {
 	}
 }
 
-func genPodWithSecretVolume(podName, podNamespace, secretName string) *corev1.Pod {
-	return &corev1.Pod{
+func genPodWithSecretVolume(podName, podNamespace, annotationSecretName string) *corev1.Pod {
+	pod := &corev1.Pod{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      podName,
-			Namespace: podNamespace,
-			Labels:    map[string]string{redeployment.RedeployLabel: "true"},
-		},
-		Spec: corev1.PodSpec{
-			Volumes: []corev1.Volume{
-				{
-					Name: secretName,
-					VolumeSource: corev1.VolumeSource{Secret: &corev1.SecretVolumeSource{
-						SecretName: secretName,
-					}},
-				},
-			},
+			Name:        podName,
+			Namespace:   podNamespace,
+			Labels:      map[string]string{redeployment.RedeployLabel: "true"},
+			Annotations: map[string]string{},
 		},
 	}
-}
-
-func genPodWithSecretRef(podName, podNamespace, secretName string) *corev1.Pod {
-	return &corev1.Pod{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      podName,
-			Namespace: podNamespace,
-			Labels:    map[string]string{redeployment.RedeployLabel: "true"},
-		},
-		Spec: corev1.PodSpec{
-			Containers: []corev1.Container{
-				{
-					EnvFrom: []corev1.EnvFromSource{
-						{
-							SecretRef: &corev1.SecretEnvSource{
-								LocalObjectReference: corev1.LocalObjectReference{
-									Name: secretName,
-								},
-							},
-						},
-					},
-				},
-			},
-		},
+	if annotationSecretName != "" {
+		pod.Annotations["security.plural.sh/oauth-env-secret"] = annotationSecretName
 	}
+	return pod
 }

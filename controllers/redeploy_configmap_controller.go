@@ -18,22 +18,28 @@ package controllers
 
 import (
 	"context"
-	"fmt"
+	"crypto/sha256"
+	"encoding/hex"
+	"sort"
 
 	"github.com/go-logr/logr"
+	"github.com/pluralsh/plural-operator/services/redeployment"
+
 	corev1 "k8s.io/api/core/v1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-
-	"github.com/pluralsh/plural-operator/services/redeployment"
+	"sigs.k8s.io/controller-runtime/pkg/event"
+	"sigs.k8s.io/controller-runtime/pkg/predicate"
 )
 
 type ConfigMapRedeployReconciler struct {
 	client.Client
-	Scheme *runtime.Scheme
-	Log    logr.Logger
+	Scheme             *runtime.Scheme
+	Log                logr.Logger
+	ConfigMapName      string
+	ConfigMapNamespace string
 }
 
 func (c *ConfigMapRedeployReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
@@ -41,44 +47,94 @@ func (c *ConfigMapRedeployReconciler) Reconcile(ctx context.Context, req ctrl.Re
 
 	configMap := &corev1.ConfigMap{}
 	if err := c.Client.Get(ctx, req.NamespacedName, configMap); err != nil {
-		log.Error(err, "Failed to fetch config map")
-		return ctrl.Result{}, client.IgnoreNotFound(err)
-	}
-
-	svc, err := redeployment.NewService(redeployment.ResourceConfigMap, c.Client, configMap)
-	if err != nil {
-		log.Error(nil, "could not create ConfigMap service")
-		return reconcile.Result{}, err
-	}
-
-	if !svc.HasAnnotation() {
-		log.Info("update config map annotation")
-		return reconcile.Result{}, svc.UpdateAnnotation()
-	}
-
-	if !svc.IsControlled() {
-		return reconcile.Result{}, nil
-	}
-
-	if svc.ShouldDeletePods() {
-		log.Info("deleting Pods")
-		err = svc.DeletePods()
-		if err != nil {
-			return reconcile.Result{}, fmt.Errorf("could not delete pods: %w", err)
+		if apierrors.IsNotFound(err) {
+			return ctrl.Result{}, nil
 		}
+		log.Error(err, "Failed to fetch config map")
+		return ctrl.Result{}, err
+	}
 
-		err = svc.UpdateAnnotation()
-		if err != nil {
-			return reconcile.Result{}, fmt.Errorf("could not update annotation: %w", err)
+	redeployLabelSelector, err := redeployment.RedeployLabelSelector()
+	if err != nil {
+		return ctrl.Result{}, err
+	}
+
+	pods := &corev1.PodList{}
+	if err := c.List(ctx, pods, &client.ListOptions{LabelSelector: redeployLabelSelector}); err != nil {
+		return ctrl.Result{}, err
+	}
+	for _, pod := range pods.Items {
+		if err := c.Delete(ctx, &pod); err != nil {
+			return ctrl.Result{}, err
 		}
 	}
 
 	return ctrl.Result{}, nil
 }
 
+func updateConfigMapEventsOnly() predicate.Predicate {
+	return predicate.Funcs{
+		CreateFunc: func(e event.CreateEvent) bool {
+			return false
+		},
+		UpdateFunc: func(e event.UpdateEvent) bool {
+			oldConfigMap, ok := e.ObjectOld.(*corev1.ConfigMap)
+			if !ok {
+				return false
+			}
+			newConfigMap, ok := e.ObjectNew.(*corev1.ConfigMap)
+			if !ok {
+				return false
+			}
+			oldSHA := getConfigMapSHA(oldConfigMap)
+			newSHA := getConfigMapSHA(newConfigMap)
+			return oldSHA != newSHA
+		},
+		DeleteFunc: func(e event.DeleteEvent) bool {
+			return false
+		},
+		GenericFunc: func(e event.GenericEvent) bool {
+			return false
+		},
+	}
+}
+
+func getConfigMapSHA(c *corev1.ConfigMap) string {
+	sha := sha256.New()
+	dataKeys := make([]string, 0)
+	binaryDataKeys := make([]string, 0)
+
+	for key := range c.Data {
+		dataKeys = append(dataKeys, key)
+	}
+
+	for key := range c.BinaryData {
+		binaryDataKeys = append(binaryDataKeys, key)
+	}
+
+	sort.Strings(dataKeys)
+	sort.Strings(binaryDataKeys)
+
+	for _, key := range dataKeys {
+		sha.Write([]byte(c.Data[key]))
+	}
+
+	for _, key := range binaryDataKeys {
+		sha.Write(c.BinaryData[key])
+	}
+
+	return hex.EncodeToString(sha.Sum(nil))
+}
+
 // SetupWithManager sets up the controller with the Manager.
 func (c *ConfigMapRedeployReconciler) SetupWithManager(mgr ctrl.Manager) error {
+	byNameAndNamespace := predicate.NewPredicateFuncs(func(object client.Object) bool {
+		return object.GetName() == c.ConfigMapName && object.GetNamespace() == c.ConfigMapNamespace
+	})
+
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&corev1.ConfigMap{}).
+		WithEventFilter(byNameAndNamespace).
+		WithEventFilter(updateConfigMapEventsOnly()).
 		Complete(c)
 }
