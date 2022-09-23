@@ -21,11 +21,16 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
+	"time"
 
 	"sigs.k8s.io/yaml"
 
 	"github.com/go-logr/logr"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/client-go/informers"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/tools/cache"
+	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 )
@@ -33,11 +38,12 @@ import (
 //+kubebuilder:webhook:path=/mutate-security-plural-sh-v1alpha1-oauthinjector,mutating=true,failurePolicy=fail,sideEffects=None,groups="",resources=pods,verbs=create;update,versions=v1,name=moauthinjector.security.plural.sh,admissionReviewVersions={v1,v1beta1}
 
 type OAuthInjector struct {
-	Name       string
-	Client     client.Client
-	Log        logr.Logger
-	decoder    *admission.Decoder
-	ConfigPath string
+	Name               string
+	Client             client.Client
+	Log                logr.Logger
+	decoder            *admission.Decoder
+	ConfigMapName      string
+	ConfigMapNamespace string
 }
 
 type Config struct {
@@ -71,11 +77,53 @@ func (oi *OAuthInjector) Handle(ctx context.Context, req admission.Request) admi
 		},
 	}
 
-	sidecarConfig, err := loadConfig(oi.ConfigPath)
+	kubeconfig := ctrl.GetConfigOrDie()
+	kubeClient, err := kubernetes.NewForConfig(kubeconfig)
 	if err != nil {
-		log.Info("Could not read sidecar config")
-		return admission.Errored(http.StatusBadRequest, err)
+		log.Error(err, "Failed setting up kubernetes client for configmap watcher")
 	}
+
+	var sidecarConfig Config
+
+	factory := informers.NewSharedInformerFactoryWithOptions(kubeClient, time.Minute, informers.WithNamespace(oi.ConfigMapNamespace))
+	configmapInformer := factory.Core().V1().ConfigMaps().Informer()
+
+	configmapInformer.AddEventHandler(cache.FilteringResourceEventHandler{
+		FilterFunc: func(obj interface{}) bool {
+			if configmap, ok := obj.(*corev1.ConfigMap); ok {
+				return configmap.Name == oi.ConfigMapName
+			}
+			return false
+		},
+		Handler: cache.ResourceEventHandlerFuncs{
+			AddFunc: func(obj interface{}) {
+				configmap := obj.(*corev1.ConfigMap)
+
+				containers := configmap.Data["oauth-sidecar-config.yaml"]
+
+				if err := yaml.Unmarshal([]byte(containers), &sidecarConfig); err != nil {
+					log.Error(err, "Failed to unmarshal configmap data")
+				}
+
+				log.Info("Loaded oauth injector configmap", "config", sidecarConfig)
+			},
+			UpdateFunc: func(oldObj, newObj interface{}) {
+				newConfigmap := newObj.(*corev1.ConfigMap)
+
+				containers := newConfigmap.Data["oauth-sidecar-config.yaml"]
+
+				if err := yaml.Unmarshal([]byte(containers), &sidecarConfig); err != nil {
+					log.Error(err, "Failed to unmarshal configmap data")
+				}
+
+				log.Info("Loaded oauth injector configmap", "config", sidecarConfig)
+			},
+		},
+	})
+
+	factory.Start(ctx.Done())
+	factory.WaitForCacheSync(ctx.Done())
+
 	sidecarConfig.Containers[0].EnvFrom = *secretRef
 
 	httpwd, ok := pod.Annotations["security.plural.sh/htpasswd-secret"]
