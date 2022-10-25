@@ -122,14 +122,17 @@ func (r *WireguardServerReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		}
 	}()
 
+	var wireguardIPv4Net *net.IPNet
+
 	// set the network CIDR and check if it is valid
 	if wireguardInstance.Spec.NetworkCIDR != "" {
-		if _, _, err := net.ParseCIDR(wireguardInstance.Spec.NetworkCIDR); err != nil {
+		if _, ipv4Net, err := net.ParseCIDR(wireguardInstance.Spec.NetworkCIDR); err != nil {
 			log.Error(err, "NetworkCIDR is invalid")
 			conditions.MarkFalse(wireguardInstance, vpnv1alpha1.WireguardServerReadyCondition, vpnv1alpha1.InvalidCIDRReason, crhelperTypes.ConditionSeverityError, err.Error())
 			return ctrl.Result{}, nil
 		} else {
 			wireguardCIDR = wireguardInstance.Spec.NetworkCIDR
+			wireguardIPv4Net = ipv4Net
 		}
 	}
 
@@ -270,7 +273,7 @@ ListenPort = %v
 	wireguardInstance.Status.Hostname = hostname
 	wireguardInstance.Status.Port = strconv.Itoa(int(port))
 
-	dep := r.deploymentForWireguard(wireguardInstance)
+	dep := r.deploymentForWireguard(wireguardInstance, wireguardIPv4Net)
 	log.Info("Creating a new dep", "dep.Namespace", dep.Namespace, "dep.Name", dep.Name)
 	if err := ctrl.SetControllerReference(wireguardInstance, dep, r.Scheme); err != nil {
 		log.Error(err, "Error setting ControllerReference for deployment")
@@ -528,7 +531,7 @@ func (r *WireguardServerReconciler) getWireguardPeers(ctx context.Context, req c
 	return relatedPeers, nil
 }
 
-func (r *WireguardServerReconciler) deploymentForWireguard(s *vpnv1alpha1.WireguardServer) *appsv1.Deployment {
+func (r *WireguardServerReconciler) deploymentForWireguard(s *vpnv1alpha1.WireguardServer, wireguardIPv4Net *net.IPNet) *appsv1.Deployment {
 	ls := labelsForWireguard(s.Name)
 	replicas := int32(1)
 
@@ -579,11 +582,17 @@ func (r *WireguardServerReconciler) deploymentForWireguard(s *vpnv1alpha1.Wiregu
 									Name:          "wireguard",
 									Protocol:      corev1.ProtocolUDP,
 								}},
-							EnvFrom: []corev1.EnvFromSource{{
-								ConfigMapRef: &corev1.ConfigMapEnvSource{
-									LocalObjectReference: corev1.LocalObjectReference{Name: s.Name + "-config"},
+							Env: []corev1.EnvVar{
+								{
+									Name:  "SUB_NET",
+									Value: wireguardIPv4Net.String(),
 								},
-							}},
+							},
+							// EnvFrom: []corev1.EnvFromSource{{
+							// 	ConfigMapRef: &corev1.ConfigMapEnvSource{
+							// 		LocalObjectReference: corev1.LocalObjectReference{Name: s.Name + "-config"},
+							// 	},
+							// }},
 							VolumeMounts: []corev1.VolumeMount{
 								{
 									Name:      "socket",
