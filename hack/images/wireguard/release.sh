@@ -18,8 +18,8 @@ set -euo pipefail
 
 cd $(dirname $0)
 
-REPOSITORY="${REPOSITORY:-dkr.plural.sh/plural-operator/wireguard}"
-VERSION=0.0.1
+REPOSITORY="${REPOSITORY:-dkr.plural.sh/bootstrap/wireguard-server}"
+VERSION=0.1.0
 SUFFIX=""
 
 docker build --no-cache --pull -t "${REPOSITORY}:${VERSION}${SUFFIX}" .
