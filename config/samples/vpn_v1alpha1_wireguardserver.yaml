@@ -5,6 +5,7 @@ metadata:
   namespace: default
 spec:
   serviceType: LoadBalancer
+  wireguardImage: "dkr.plural.sh/bootstrap/wireguard-server:0.1.0"
   serviceAnnotations:
     service.beta.kubernetes.io/aws-load-balancer-nlb-target-type: "ip"
     service.beta.kubernetes.io/aws-load-balancer-scheme: "internet-facing"

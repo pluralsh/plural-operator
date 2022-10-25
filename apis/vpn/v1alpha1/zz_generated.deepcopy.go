@@ -23,6 +23,7 @@ package v1alpha1
 
 import (
 	"github.com/pluralsh/controller-reconcile-helper/pkg/types"
+	"k8s.io/api/core/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 )
 
@@ -219,6 +220,13 @@ func (in *WireguardServerSpec) DeepCopyInto(out *WireguardServerSpec) {
 		*out = make(map[string]string, len(*in))
 		for key, val := range *in {
 			(*out)[key] = val
+		}
+	}
+	if in.Sidecars != nil {
+		in, out := &in.Sidecars, &out.Sidecars
+		*out = make([]v1.Container, len(*in))
+		for i := range *in {
+			(*in)[i].DeepCopyInto(&(*out)[i])
 		}
 	}
 }

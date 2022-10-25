@@ -42,6 +42,12 @@ type WireguardServerSpec struct {
 	// +optional
 	// ServiceAnnotations for wireguard k8s service
 	ServiceAnnotations map[string]string `json:"serviceAnnotations,omitempty"`
+
+	// WireguardImage for wireguard k8s deployment
+	WireguardImage string `json:"wireguardImage"`
+
+	// Sidecars for wireguard k8s deployment
+	Sidecars []corev1.Container `json:"sidecars,omitempty"`
 }
 
 const (

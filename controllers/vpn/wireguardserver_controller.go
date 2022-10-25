@@ -52,8 +52,6 @@ const defaultWireguardPort = int32(51820)
 // Port of the wireguard prometheus exporter
 const metricsPort = 9586
 
-const wireguardDefaultImage = "dkr.plural.sh/plural-operator/wireguard:0.0.1"
-
 // WireguardServerReconciler reconciles a Wireguard object
 type WireguardServerReconciler struct {
 	client.Client
@@ -76,8 +74,6 @@ type WireguardServerReconciler struct {
 // - https://pkg.go.dev/sigs.k8s.io/controller-runtime@v0.11.2/pkg/reconcile
 func (r *WireguardServerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := r.Log.WithValues("WireguardServer", req.NamespacedName)
-
-	wireguardImage := wireguardDefaultImage
 
 	wireguardInstance := &vpnv1alpha1.WireguardServer{}
 	if err := r.Get(ctx, req.NamespacedName, wireguardInstance); err != nil {
@@ -270,7 +266,7 @@ ListenPort = %v
 	deploymentFound := &appsv1.Deployment{}
 	err = r.Get(ctx, types.NamespacedName{Name: wireguardInstance.Name + "-dep", Namespace: wireguardInstance.Namespace}, deploymentFound)
 	if err != nil && apierrs.IsNotFound(err) {
-		dep := r.deploymentForWireguard(wireguardInstance, wireguardImage)
+		dep := r.deploymentForWireguard(wireguardInstance)
 		log.Info("Creating a new dep", "dep.Namespace", dep.Namespace, "dep.Name", dep.Name)
 		if err := ctrl.SetControllerReference(wireguardInstance, dep, r.Scheme); err != nil {
 			log.Error(err, "Error setting ControllerReference for deployment")
@@ -544,11 +540,11 @@ func (r *WireguardServerReconciler) configmapForWireguard(wireguardServer *vpnv1
 	}
 }
 
-func (r *WireguardServerReconciler) deploymentForWireguard(s *vpnv1alpha1.WireguardServer, image string) *appsv1.Deployment {
+func (r *WireguardServerReconciler) deploymentForWireguard(s *vpnv1alpha1.WireguardServer) *appsv1.Deployment {
 	ls := labelsForWireguard(s.Name)
 	replicas := int32(1)
 
-	return &appsv1.Deployment{
+	dep := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      s.Name + "-dep",
 			Namespace: s.Namespace,
@@ -586,28 +582,7 @@ func (r *WireguardServerReconciler) deploymentForWireguard(s *vpnv1alpha1.Wiregu
 							SecurityContext: &corev1.SecurityContext{
 								Capabilities: &corev1.Capabilities{Add: []corev1.Capability{"NET_ADMIN"}},
 							},
-							Image:           "mindflavor/prometheus-wireguard-exporter:3.5.1",
-							ImagePullPolicy: "Always",
-							Name:            "metrics",
-							Command:         []string{"/usr/local/bin/prometheus_wireguard_exporter"},
-							Ports: []corev1.ContainerPort{
-								{
-									ContainerPort: metricsPort,
-									Name:          "metrics",
-									Protocol:      corev1.ProtocolTCP,
-								}},
-							VolumeMounts: []corev1.VolumeMount{
-								{
-									Name:      "socket",
-									MountPath: "/var/run/wireguard/",
-								},
-							},
-						},
-						{
-							SecurityContext: &corev1.SecurityContext{
-								Capabilities: &corev1.Capabilities{Add: []corev1.Capability{"NET_ADMIN"}},
-							},
-							Image:           image,
+							Image:           s.Spec.WireguardImage,
 							ImagePullPolicy: "Always",
 							Name:            "wireguard",
 							Ports: []corev1.ContainerPort{
@@ -635,6 +610,12 @@ func (r *WireguardServerReconciler) deploymentForWireguard(s *vpnv1alpha1.Wiregu
 			},
 		},
 	}
+
+	for _, sidecar := range s.Spec.Sidecars {
+		dep.Spec.Template.Spec.Containers = append(dep.Spec.Template.Spec.Containers, sidecar)
+	}
+
+	return dep
 }
 
 func labelsForWireguard(name string) map[string]string {
