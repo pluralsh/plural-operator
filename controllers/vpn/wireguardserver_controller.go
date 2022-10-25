@@ -361,9 +361,9 @@ func (r *WireguardServerReconciler) generateService(wireguardInstance *vpnv1alph
 			Labels:    labelsForWireguard(wireguardInstance.Name),
 			//TODO: make this configurable
 			Annotations: map[string]string{
-				"service.beta.kubernetes.io/aws-load-balancer-type":            "external",
 				"service.beta.kubernetes.io/aws-load-balancer-nlb-target-type": "ip",
 				"service.beta.kubernetes.io/aws-load-balancer-scheme":          "internet-facing",
+				"service.beta.kubernetes.io/aws-load-balancer-type":            "nlb",
 			},
 		},
 		Spec: corev1.ServiceSpec{
