@@ -44,10 +44,10 @@ type WireguardServerSpec struct {
 }
 
 const (
-	// DeviceReadyCondition reports on current status of the Equinix Metal device. Ready indicates the instance is in a Running state.
+	// WireguardServerReadyCondition reports on current status of the Equinix Metal device. Ready indicates the instance is in a Running state.
 	WireguardServerReadyCondition crhelperTypes.ConditionType = "WireguardServerReady"
 
-	// FailedToCreateService used when the service could not be created.
+	// FailedToCreateServiceReason used when the service could not be created.
 	FailedToCreateServiceReason = "FailedToCreateService"
 
 	// FailedToCreateMetricsServiceReason used when the service could not be created.
@@ -55,6 +55,12 @@ const (
 
 	// FailedToCreateSecretReason used when the secret could not be created.
 	FailedToCreateSecretReason = "FailedToCreateSecret"
+
+	// FailedToCreateConfigMapReason used when the configmap could not be created.
+	FailedToCreateConfigMapReason = "FailedToCreateConfigMap"
+
+	// FailedToCreateDeploymentReason used when the configmap could not be created.
+	FailedToCreateDeploymentReason = "FailedToCreateDeployment"
 
 	// ServiceNotReadyReason used when service does not yet have a valid IP or hostname
 	ServiceNotReadyReason = "ServiceNotReady"

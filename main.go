@@ -20,6 +20,8 @@ import (
 	"flag"
 	"os"
 
+	"github.com/pluralsh/plural-operator/controllers"
+
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
@@ -33,8 +35,7 @@ import (
 
 	"github.com/pluralsh/plural-operator/alertmanager"
 	platformv1alpha1 "github.com/pluralsh/plural-operator/apis/platform/v1alpha1"
-	"github.com/pluralsh/plural-operator/controllers"
-
+	vpnv1alpha1 "github.com/pluralsh/plural-operator/apis/vpn/v1alpha1"
 	amv1alpha1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1alpha1"
 
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
@@ -56,6 +57,8 @@ func init() {
 	utilruntime.Must(platformv1alpha1.AddToScheme(scheme))
 
 	utilruntime.Must(amv1alpha1.AddToScheme(scheme))
+
+	utilruntime.Must(vpnv1alpha1.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 
@@ -91,7 +94,6 @@ func main() {
 		setupLog.Error(err, "unable to start manager")
 		os.Exit(1)
 	}
-
 	if err = (&controllers.PodReconciler{
 		Client: mgr.GetClient(),
 		Log:    ctrl.Log.WithName("controllers").WithName("Pod"),
@@ -207,6 +209,7 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "PodSweeperController")
 		os.Exit(1)
 	}
+
 	if err = (&vpncontrollers.WireguardServerReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
@@ -215,6 +218,7 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "WireguardServer")
 		os.Exit(1)
 	}
+
 	if err = (&vpncontrollers.WireguardPeerReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),

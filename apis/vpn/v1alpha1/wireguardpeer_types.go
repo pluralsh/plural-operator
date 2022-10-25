@@ -25,6 +25,12 @@ type PrivateKey struct {
 	SecretKeyRef corev1.SecretKeySelector `json:"secretKeyRef"`
 }
 
+const (
+	Pending string = "pending"
+	Error          = "error"
+	Ready          = "ready"
+)
+
 type Status struct {
 }
 

@@ -6,9 +6,10 @@ require (
 	github.com/cenkalti/backoff v2.2.1+incompatible
 	github.com/go-logr/logr v1.2.0
 	github.com/go-resty/resty/v2 v2.6.0
+	github.com/korylprince/ipnetgen v1.0.1
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.19.0
-	github.com/pluralsh/controller-reconcile-helper v0.0.1
+	github.com/pluralsh/controller-reconcile-helper v0.0.2
 	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.51.1
 	github.com/stretchr/testify v1.7.0
 	golang.zx2c4.com/wireguard/wgctrl v0.0.0-20220916014741-473347a5e6e3
@@ -65,7 +66,6 @@ require (
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/nxadm/tail v1.4.8 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
-	github.com/pluralsh/kubricks-controller v0.0.0-20220615190526-d6183b0f5ce3 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/prometheus/client_golang v1.12.1 // indirect
 	github.com/prometheus/client_model v0.2.0 // indirect

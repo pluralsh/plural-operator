@@ -101,6 +101,7 @@ spec:
                       type: object
                     type: array
                 type: object
+                x-kubernetes-map-type: atomic
             required:
             - selector
             type: object

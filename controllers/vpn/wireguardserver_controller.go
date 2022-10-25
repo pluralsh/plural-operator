@@ -21,6 +21,9 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/go-logr/logr"
+	"github.com/korylprince/ipnetgen"
+
 	"github.com/pluralsh/controller-reconcile-helper/pkg/conditions"
 	"github.com/pluralsh/controller-reconcile-helper/pkg/patch"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -32,11 +35,10 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
 
-	"github.com/go-logr/logr"
 	crhelper "github.com/pluralsh/controller-reconcile-helper/pkg"
 	crhelperTypes "github.com/pluralsh/controller-reconcile-helper/pkg/types"
 	vpnv1alpha1 "github.com/pluralsh/plural-operator/apis/vpn/v1alpha1"
-	wgtypes "golang.zx2c4.com/wireguard/wgctrl/wgtypes"
+	"golang.zx2c4.com/wireguard/wgctrl/wgtypes"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	apierrs "k8s.io/apimachinery/pkg/api/errors"
@@ -48,6 +50,8 @@ const defaultWireguardPort = int32(51820)
 
 // Port of the wireguard prometheus exporter
 const metricsPort = 9586
+
+const wireguardDefaultImage = "ghcr.io/jodevsa/wireguard-operator/wireguard:sha-2b596d92a59502ed032270dffb564c30859d71ee"
 
 // WireguardServerReconciler reconciles a Wireguard object
 type WireguardServerReconciler struct {
@@ -72,10 +76,11 @@ type WireguardServerReconciler struct {
 func (r *WireguardServerReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := r.Log.WithValues("WireguardServer", req.NamespacedName)
 
+	wireguardImage := wireguardDefaultImage
+
 	wireguardInstance := &vpnv1alpha1.WireguardServer{}
 	if err := r.Get(ctx, req.NamespacedName, wireguardInstance); err != nil {
 		if apierrs.IsNotFound(err) {
-			// log.Info("Unable to fetch wireguard server - skipping", "namespace", wireguardInstance.Namespace, "name", wireguardInstance.Name)
 			return ctrl.Result{}, nil
 		}
 		return ctrl.Result{}, err
@@ -129,7 +134,6 @@ func (r *WireguardServerReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	}
 
 	foundSecret := &corev1.Secret{}
-
 	if err := r.Get(ctx, types.NamespacedName{Name: service.Name, Namespace: service.Namespace}, foundSecret); err == nil {
 		privateKey := string(foundSecret.Data["privateKey"])
 		publicKey := string(foundSecret.Data["publicKey"])
@@ -203,14 +207,11 @@ ListenPort = %v
 				conditions.MarkFalse(wireguardInstance, vpnv1alpha1.WireguardServerReadyCondition, vpnv1alpha1.FailedToCreateSecretReason, crhelperTypes.ConditionSeverityError, err.Error())
 				return ctrl.Result{}, err
 			}
-
-			// return ctrl.Result{}, nil
 		}
-		return ctrl.Result{}, err
+		return ctrl.Result{}, nil
 	}
 
 	foundService := &corev1.Service{}
-
 	if err := r.Get(ctx, types.NamespacedName{Name: service.Name, Namespace: service.Namespace}, foundService); err != nil {
 		if apierrs.IsNotFound(err) {
 			return ctrl.Result{}, nil
@@ -242,6 +243,62 @@ ListenPort = %v
 	wireguardInstance.Status.Hostname = hostname
 	wireguardInstance.Status.Port = strconv.Itoa(int(port))
 
+	// configmap
+
+	configFound := &corev1.ConfigMap{}
+	err = r.Get(ctx, types.NamespacedName{Name: wireguardInstance.Name + "-config", Namespace: wireguardInstance.Namespace}, configFound)
+	if err != nil && apierrs.IsNotFound(err) {
+		config := r.configmapForWireguard(wireguardInstance)
+		log.Info("Creating a new config", "config.Namespace", config.Namespace, "config.Name", config.Name)
+
+		if err := ctrl.SetControllerReference(wireguardInstance, config, r.Scheme); err != nil {
+			log.Error(err, "Error setting ControllerReference for ConfigMap")
+			return ctrl.Result{}, err
+		}
+		if err := crhelper.ConfigMap(ctx, r.Client, config, log); err != nil {
+			log.Error(err, "Error reconciling ConfigMap", "secret", config.Name, "namespace", config.Namespace)
+			conditions.MarkFalse(wireguardInstance, vpnv1alpha1.WireguardServerReadyCondition, vpnv1alpha1.FailedToCreateConfigMapReason, crhelperTypes.ConditionSeverityError, err.Error())
+			return ctrl.Result{}, err
+		}
+		return ctrl.Result{}, nil
+	} else if err != nil {
+		log.Error(err, "Failed to get config")
+		return ctrl.Result{}, err
+	}
+
+	deploymentFound := &appsv1.Deployment{}
+	err = r.Get(ctx, types.NamespacedName{Name: wireguardInstance.Name + "-dep", Namespace: wireguardInstance.Namespace}, deploymentFound)
+	if err != nil && apierrs.IsNotFound(err) {
+		dep := r.deploymentForWireguard(wireguardInstance, wireguardImage)
+		log.Info("Creating a new dep", "dep.Namespace", dep.Namespace, "dep.Name", dep.Name)
+		if err := ctrl.SetControllerReference(wireguardInstance, dep, r.Scheme); err != nil {
+			log.Error(err, "Error setting ControllerReference for deployment")
+			return ctrl.Result{}, err
+		}
+		if err := crhelper.Deployment(ctx, r.Client, dep, log); err != nil {
+			log.Error(err, "Error reconciling Deployment", "secret", dep.Name, "namespace", dep.Namespace)
+			conditions.MarkFalse(wireguardInstance, vpnv1alpha1.WireguardServerReadyCondition, vpnv1alpha1.FailedToCreateDeploymentReason, crhelperTypes.ConditionSeverityError, err.Error())
+			return ctrl.Result{}, err
+		}
+		return ctrl.Result{}, nil
+	} else if err != nil {
+		log.Error(err, "Failed to get dep")
+		return ctrl.Result{}, err
+	}
+
+	dns := "1.1.1.1"
+	kubeDnsService := &corev1.Service{}
+	err = r.Get(ctx, types.NamespacedName{Name: "kube-dns", Namespace: "kube-system"}, kubeDnsService)
+	if err == nil {
+		dns = fmt.Sprintf("%s, %s.svc.cluster.local", kubeDnsService.Spec.ClusterIP, wireguardInstance.Namespace)
+	} else {
+		log.Error(err, "Unable to get kube-dns service")
+	}
+
+	if err := r.updateWireguardPeers(ctx, req, wireguardInstance, hostname, dns, string(foundSecret.Data["publicKey"]), wireguardInstance.Spec.Mtu); err != nil {
+		return ctrl.Result{}, err
+	}
+
 	readyCondition := conditions.Get(wireguardInstance, crhelperTypes.ReadyCondition)
 	if readyCondition != nil {
 		switch readyCondition.Status {
@@ -254,8 +311,6 @@ ListenPort = %v
 
 	// Always attempt to Patch the Wireguard Server object and status after each reconciliation.
 	defer func() {
-
-		patchWireguardServer(ctx, patchHelper, wireguardInstance)
 		if err := patchWireguardServer(ctx, patchHelper, wireguardInstance); err != nil {
 			log.Error(err, "failed to patch Wireguard Server Status")
 			// if rerr == nil {
@@ -264,7 +319,6 @@ ListenPort = %v
 		}
 	}()
 
-	// return r.reconcile(ctx, wireguardInstance, log)
 	return ctrl.Result{}, nil
 }
 
@@ -272,7 +326,6 @@ ListenPort = %v
 func (r *WireguardServerReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&vpnv1alpha1.WireguardServer{}).
-		// Owns(&vpnv1alpha1.WireguardPeer{}).
 		Owns(&corev1.Service{}).
 		Owns(&corev1.ConfigMap{}).
 		Owns(&appsv1.Deployment{}).
@@ -305,10 +358,7 @@ func (r *WireguardServerReconciler) generateService(wireguardInstance *vpnv1alph
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      wireguardInstance.Name,
 			Namespace: wireguardInstance.Namespace,
-			Labels: map[string]string{
-				"wireguardserver.vpn.plural.sh":             "",
-				"wireguardserver.vpn.plural.sh/server-name": wireguardInstance.Name,
-			},
+			Labels:    labelsForWireguard(wireguardInstance.Name),
 			//TODO: make this configurable
 			Annotations: map[string]string{
 				"service.beta.kubernetes.io/aws-load-balancer-type":            "external",
@@ -317,11 +367,8 @@ func (r *WireguardServerReconciler) generateService(wireguardInstance *vpnv1alph
 			},
 		},
 		Spec: corev1.ServiceSpec{
-			Type: wireguardInstance.Spec.ServiceType,
-			Selector: map[string]string{
-				"wireguardserver.vpn.plural.sh":             "",
-				"wireguardserver.vpn.plural.sh/server-name": wireguardInstance.Name,
-			},
+			Type:     wireguardInstance.Spec.ServiceType,
+			Selector: labelsForWireguard(wireguardInstance.Name),
 			Ports: []corev1.ServicePort{{
 				Protocol:   corev1.ProtocolUDP,
 				Port:       wireguardPort,
@@ -338,17 +385,11 @@ func (r *WireguardServerReconciler) generateMetricsService(wireguardInstance *vp
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      wireguardInstance.Name + "-metrics",
 			Namespace: wireguardInstance.Namespace,
-			Labels: map[string]string{
-				"wireguardserver.vpn.plural.sh":             "",
-				"wireguardserver.vpn.plural.sh/server-name": wireguardInstance.Name,
-			},
+			Labels:    labelsForWireguard(wireguardInstance.Name),
 		},
 		Spec: corev1.ServiceSpec{
-			Type: corev1.ServiceTypeClusterIP,
-			Selector: map[string]string{
-				"wireguardserver.vpn.plural.sh":             "",
-				"wireguardserver.vpn.plural.sh/server-name": wireguardInstance.Name,
-			},
+			Type:     corev1.ServiceTypeClusterIP,
+			Selector: labelsForWireguard(wireguardInstance.Name),
 			Ports: []corev1.ServicePort{{
 				Protocol:   corev1.ProtocolTCP,
 				Port:       metricsPort,
@@ -365,10 +406,7 @@ func (r *WireguardServerReconciler) generateSecret(wireguardInstance *vpnv1alpha
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      wireguardInstance.Name,
 			Namespace: wireguardInstance.Namespace,
-			Labels: map[string]string{
-				"wireguardserver.vpn.plural.sh":             "",
-				"wireguardserver.vpn.plural.sh/server-name": wireguardInstance.Name,
-			},
+			Labels:    labelsForWireguard(wireguardInstance.Name),
 		},
 		Data: map[string][]byte{"config": []byte(config), "privateKey": []byte(privateKey), "publicKey": []byte(publicKey)},
 	}
@@ -396,4 +434,217 @@ func patchWireguardServer(ctx context.Context, patchHelper *patch.Helper, wiregu
 		},
 		},
 	)
+}
+
+func (r *WireguardServerReconciler) getUsedIps(peers *vpnv1alpha1.WireguardPeerList) []string {
+	usedIps := []string{"10.8.0.0", "10.8.0.1"}
+	for _, p := range peers.Items {
+		usedIps = append(usedIps, p.Spec.Address)
+
+	}
+
+	return usedIps
+}
+
+func getAvaialbleIp(cidr string, usedIps []string) (string, error) {
+	gen, err := ipnetgen.New(cidr)
+	if err != nil {
+		return "", err
+	}
+	for ip := gen.Next(); ip != nil; ip = gen.Next() {
+		used := false
+		for _, usedIp := range usedIps {
+			if ip.String() == usedIp {
+				used = true
+				break
+			}
+		}
+		if !used {
+			return ip.String(), nil
+		}
+	}
+
+	return "", fmt.Errorf("No available ip found in %s", cidr)
+}
+
+func (r *WireguardServerReconciler) updateWireguardPeers(ctx context.Context, req ctrl.Request, wireguard *vpnv1alpha1.WireguardServer, serverAddress string, dns string, serverPublicKey string, serverMtu string) error {
+
+	peers, err := r.getWireguardPeers(ctx, req)
+	if err != nil {
+		return err
+	}
+
+	usedIps := r.getUsedIps(peers)
+
+	for _, peer := range peers.Items {
+		if peer.Spec.Address == "" {
+			ip, err := getAvaialbleIp("10.8.0.0/24", usedIps)
+
+			if err != nil {
+				return err
+			}
+
+			peer.Spec.Address = ip
+
+			if err := r.Update(ctx, &peer); err != nil {
+				return err
+			}
+
+			usedIps = append(usedIps, ip)
+		}
+
+		newConfig := fmt.Sprintf(`
+echo "
+[Interface]
+PrivateKey = $(kubectl get secret %s-peer --template={{.data.privateKey}} -n %s | base64 -d)
+Address = %s
+DNS = %s`, peer.Name, peer.Namespace, peer.Spec.Address, dns)
+
+		if serverMtu != "" {
+			newConfig = newConfig + "\nMTU = " + serverMtu
+		}
+
+		newConfig = newConfig + fmt.Sprintf(`
+[Peer]
+PublicKey = %s
+AllowedIPs = 0.0.0.0/0
+Endpoint = %s:%s"`, serverPublicKey, serverAddress, wireguard.Status.Port)
+		if peer.Status.Config != newConfig || peer.Status.Status != vpnv1alpha1.Ready {
+			peer.Status.Config = newConfig
+			peer.Status.Status = vpnv1alpha1.Ready
+			peer.Status.Message = "Peer configured"
+			if err := r.Status().Update(ctx, &peer); err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
+func (r *WireguardServerReconciler) getWireguardPeers(ctx context.Context, req ctrl.Request) (*vpnv1alpha1.WireguardPeerList, error) {
+	peers := &vpnv1alpha1.WireguardPeerList{}
+	if err := r.List(ctx, peers, client.InNamespace(req.Namespace)); err != nil {
+		return nil, err
+	}
+
+	relatedPeers := &vpnv1alpha1.WireguardPeerList{}
+
+	for _, peer := range peers.Items {
+		if peer.Spec.WireguardRef == req.Name {
+			relatedPeers.Items = append(relatedPeers.Items, peer)
+		}
+	}
+
+	return relatedPeers, nil
+}
+
+func (r *WireguardServerReconciler) configmapForWireguard(wireguardServer *vpnv1alpha1.WireguardServer) *corev1.ConfigMap {
+	return &corev1.ConfigMap{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      wireguardServer.Name + "-config",
+			Namespace: wireguardServer.Namespace,
+			Labels:    labelsForWireguard(wireguardServer.Name),
+		},
+	}
+}
+
+func (r *WireguardServerReconciler) deploymentForWireguard(s *vpnv1alpha1.WireguardServer, image string) *appsv1.Deployment {
+	ls := labelsForWireguard(s.Name)
+	replicas := int32(1)
+
+	return &appsv1.Deployment{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      s.Name + "-dep",
+			Namespace: s.Namespace,
+			Labels:    ls,
+		},
+		Spec: appsv1.DeploymentSpec{
+			Replicas: &replicas,
+			Selector: &metav1.LabelSelector{
+				MatchLabels: ls,
+			},
+			Template: corev1.PodTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{
+					Labels: ls,
+				},
+				Spec: corev1.PodSpec{
+					Volumes: []corev1.Volume{
+						{
+							Name: "socket",
+							VolumeSource: corev1.VolumeSource{
+
+								EmptyDir: &corev1.EmptyDirVolumeSource{},
+							},
+						},
+						{
+
+							Name: "config",
+							VolumeSource: corev1.VolumeSource{
+								Secret: &corev1.SecretVolumeSource{
+									SecretName: s.Name,
+								},
+							},
+						}},
+					Containers: []corev1.Container{
+						{
+							SecurityContext: &corev1.SecurityContext{
+								Capabilities: &corev1.Capabilities{Add: []corev1.Capability{"NET_ADMIN"}},
+							},
+							Image:           "mindflavor/prometheus-wireguard-exporter:3.5.1",
+							ImagePullPolicy: "Always",
+							Name:            "metrics",
+							Command:         []string{"/usr/local/bin/prometheus_wireguard_exporter"},
+							Ports: []corev1.ContainerPort{
+								{
+									ContainerPort: metricsPort,
+									Name:          "metrics",
+									Protocol:      corev1.ProtocolTCP,
+								}},
+							VolumeMounts: []corev1.VolumeMount{
+								{
+									Name:      "socket",
+									MountPath: "/var/run/wireguard/",
+								},
+							},
+						},
+						{
+							SecurityContext: &corev1.SecurityContext{
+								Capabilities: &corev1.Capabilities{Add: []corev1.Capability{"NET_ADMIN"}},
+							},
+							Image:           image,
+							ImagePullPolicy: "Always",
+							Name:            "wireguard",
+							Ports: []corev1.ContainerPort{
+								{
+									ContainerPort: defaultWireguardPort,
+									Name:          "wireguard",
+									Protocol:      corev1.ProtocolUDP,
+								}},
+							EnvFrom: []corev1.EnvFromSource{{
+								ConfigMapRef: &corev1.ConfigMapEnvSource{
+									LocalObjectReference: corev1.LocalObjectReference{Name: s.Name + "-config"},
+								},
+							}},
+							VolumeMounts: []corev1.VolumeMount{
+								{
+									Name:      "socket",
+									MountPath: "/var/run/wireguard/",
+								},
+								{
+									Name:      "config",
+									MountPath: "/tmp/wireguard/",
+								}},
+						}},
+				},
+			},
+		},
+	}
+}
+
+func labelsForWireguard(name string) map[string]string {
+	return map[string]string{
+		"wireguardserver.vpn.plural.sh":             "",
+		"wireguardserver.vpn.plural.sh/server-name": name,
+	}
 }
