@@ -1,0 +1,7 @@
+apiVersion: vpn.plural.sh/v1alpha1
+kind: WireguardServer
+metadata:
+  name: wireguardserver-sample
+  namespace: default
+spec:
+  serviceType: LoadBalancer

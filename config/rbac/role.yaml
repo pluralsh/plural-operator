@@ -161,3 +161,55 @@ rules:
   - patch
   - update
   - watch
+- apiGroups:
+  - vpn.plural.sh
+  resources:
+  - wireguardpeers
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - vpn.plural.sh
+  resources:
+  - wireguardpeers/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - vpn.plural.sh
+  resources:
+  - wireguardpeers/status
+  verbs:
+  - get
+  - patch
+  - update
+- apiGroups:
+  - vpn.plural.sh
+  resources:
+  - wireguards
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - vpn.plural.sh
+  resources:
+  - wireguards/finalizers
+  verbs:
+  - update
+- apiGroups:
+  - vpn.plural.sh
+  resources:
+  - wireguards/status
+  verbs:
+  - get
+  - patch
+  - update
