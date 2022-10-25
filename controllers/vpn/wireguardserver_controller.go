@@ -23,26 +23,27 @@ import (
 
 	"github.com/go-logr/logr"
 	"github.com/korylprince/ipnetgen"
+	"golang.zx2c4.com/wireguard/wgctrl/wgtypes"
 
+	crhelper "github.com/pluralsh/controller-reconcile-helper/pkg"
 	"github.com/pluralsh/controller-reconcile-helper/pkg/conditions"
 	"github.com/pluralsh/controller-reconcile-helper/pkg/patch"
+	crhelperTypes "github.com/pluralsh/controller-reconcile-helper/pkg/types"
+	vpnv1alpha1 "github.com/pluralsh/plural-operator/apis/vpn/v1alpha1"
+
+	appsv1 "k8s.io/api/apps/v1"
+	corev1 "k8s.io/api/core/v1"
+	apierrs "k8s.io/apimachinery/pkg/api/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 	"sigs.k8s.io/controller-runtime/pkg/source"
-
-	crhelper "github.com/pluralsh/controller-reconcile-helper/pkg"
-	crhelperTypes "github.com/pluralsh/controller-reconcile-helper/pkg/types"
-	vpnv1alpha1 "github.com/pluralsh/plural-operator/apis/vpn/v1alpha1"
-	"golang.zx2c4.com/wireguard/wgctrl/wgtypes"
-	appsv1 "k8s.io/api/apps/v1"
-	corev1 "k8s.io/api/core/v1"
-	apierrs "k8s.io/apimachinery/pkg/api/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // Port wireguard runs on
@@ -313,9 +314,7 @@ ListenPort = %v
 	defer func() {
 		if err := patchWireguardServer(ctx, patchHelper, wireguardInstance); err != nil {
 			log.Error(err, "failed to patch Wireguard Server Status")
-			// if rerr == nil {
-			// 	rerr = err
-			// }
+			utilruntime.HandleError(err)
 		}
 	}()
 
@@ -356,15 +355,10 @@ func (r *WireguardServerReconciler) SetupWithManager(mgr ctrl.Manager) error {
 func (r *WireguardServerReconciler) generateService(wireguardInstance *vpnv1alpha1.WireguardServer, wireguardPort int32) *corev1.Service {
 	svc := &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      wireguardInstance.Name,
-			Namespace: wireguardInstance.Namespace,
-			Labels:    labelsForWireguard(wireguardInstance.Name),
-			//TODO: make this configurable
-			Annotations: map[string]string{
-				"service.beta.kubernetes.io/aws-load-balancer-nlb-target-type": "ip",
-				"service.beta.kubernetes.io/aws-load-balancer-scheme":          "internet-facing",
-				"service.beta.kubernetes.io/aws-load-balancer-type":            "nlb",
-			},
+			Name:        wireguardInstance.Name,
+			Namespace:   wireguardInstance.Namespace,
+			Labels:      labelsForWireguard(wireguardInstance.Name),
+			Annotations: wireguardInstance.Spec.ServiceAnnotations,
 		},
 		Spec: corev1.ServiceSpec{
 			Type:     wireguardInstance.Spec.ServiceType,
@@ -376,6 +370,7 @@ func (r *WireguardServerReconciler) generateService(wireguardInstance *vpnv1alph
 			}},
 		},
 	}
+
 	return svc
 }
 

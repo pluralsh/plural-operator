@@ -55,6 +55,11 @@ spec:
                 description: Port for the wireguard server
                 format: int32
                 type: integer
+              serviceAnnotations:
+                additionalProperties:
+                  type: string
+                description: ServiceAnnotations for wireguard k8s service
+                type: object
               serviceType:
                 description: Service type to use for the VPN
                 type: string

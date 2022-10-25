@@ -32,15 +32,16 @@ type WireguardServerSpec struct {
 	// Network MTU to use for the VPN
 	Mtu string `json:"mtu,omitempty"`
 
-	// // Hostname
-	// Hostname string `json:"hostname,omitempty"`
-
 	// +optional
 	// Port for the wireguard server
 	Port *int32 `json:"port,omitempty"`
 
 	// Service type to use for the VPN
 	ServiceType corev1.ServiceType `json:"serviceType,omitempty"`
+
+	// +optional
+	// ServiceAnnotations for wireguard k8s service
+	ServiceAnnotations map[string]string `json:"serviceAnnotations,omitempty"`
 }
 
 const (
