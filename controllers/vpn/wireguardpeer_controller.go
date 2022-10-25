@@ -19,11 +19,15 @@ package vpn
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"k8s.io/apimachinery/pkg/types"
+	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 
 	crhelper "github.com/pluralsh/controller-reconcile-helper/pkg"
+	"github.com/pluralsh/controller-reconcile-helper/pkg/conditions"
 	"github.com/pluralsh/controller-reconcile-helper/pkg/patch"
+	crhelperTypes "github.com/pluralsh/controller-reconcile-helper/pkg/types"
 	"golang.zx2c4.com/wireguard/wgctrl/wgtypes"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -80,16 +84,14 @@ func (r *WireguardPeerReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 		return ctrl.Result{}, err
 	}
 
-	newPeer := peer.DeepCopy()
-	if newPeer.Status.Status == "" {
-		newPeer.Status.Status = vpnv1alpha1.Pending
-		newPeer.Status.Message = "Waiting for wireguard peer to be created"
-		if err := patchHelper.Patch(ctx, newPeer); err != nil {
-			return ctrl.Result{}, err
+	// Always attempt to Patch the Wireguard Server object and status after each reconciliation.
+	// This defer block needs to be defined before other code so it is exectued after `ctrl.Result{}` is returned
+	defer func() {
+		if err := patchWireguardPeer(ctx, patchHelper, peer); err != nil {
+			log.Error(err, "failed to patch Wireguard Peer Status")
+			utilruntime.HandleError(err)
 		}
-
-		return ctrl.Result{Requeue: true}, nil
-	}
+	}()
 
 	if peer.Spec.PublicKey == "" {
 		key, err := wgtypes.GeneratePrivateKey()
@@ -109,73 +111,91 @@ func (r *WireguardPeerReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 		}
 		if err := crhelper.Secret(ctx, r.Client, secret, log); err != nil {
 			log.Error(err, "Error reconciling Secret", "secret", secret.Name, "namespace", secret.Namespace)
+			conditions.MarkFalse(peer, vpnv1alpha1.WireguardPeerReadyCondition, vpnv1alpha1.FailedToCreateSecretReason, crhelperTypes.ConditionSeverityError, err.Error())
 			return ctrl.Result{}, err
 		}
 
-		newPeer.Spec.PublicKey = publicKey
-		newPeer.Spec.PrivateKey = vpnv1alpha1.PrivateKey{
-			SecretKeyRef: corev1.SecretKeySelector{LocalObjectReference: corev1.LocalObjectReference{Name: peer.Name + "-peer"}, Key: "privateKey"},
-		}
-
-		if err := patchHelper.Patch(ctx, newPeer); err != nil {
-			log.Error(err, "Failed to create new peer", "secret.Namespace", secret.Namespace, "secret.Name", secret.Name)
-			return ctrl.Result{}, err
+		peer.Spec.PublicKey = publicKey
+		peer.Spec.PrivateKeyRef = corev1.SecretKeySelector{
+			LocalObjectReference: corev1.LocalObjectReference{
+				Name: secret.Name,
+			},
+			Key: "privateKey",
 		}
 
 		return ctrl.Result{Requeue: true}, nil
 	}
 
 	wireguard := &vpnv1alpha1.WireguardServer{}
-	err = r.Get(ctx, types.NamespacedName{Name: newPeer.Spec.WireguardRef, Namespace: newPeer.Namespace}, wireguard)
+	err = r.Get(ctx, types.NamespacedName{Name: peer.Spec.WireguardRef, Namespace: peer.Namespace}, wireguard)
 
 	if err != nil {
 		if errors.IsNotFound(err) {
-			newPeer.Status.Status = vpnv1alpha1.Error
-			newPeer.Status.Message = fmt.Sprintf("Waiting for wireguard resource '%s' to be created", newPeer.Spec.WireguardRef)
-			if err := patchHelper.Patch(ctx, newPeer); err != nil {
-				return ctrl.Result{}, err
-			}
+			conditions.MarkFalse(peer, vpnv1alpha1.WireguardPeerReadyCondition, vpnv1alpha1.WireguardServerNotExistReason, crhelperTypes.ConditionSeverityError, "Wireguard server does not exist")
 
 			return ctrl.Result{}, nil
 		}
 		log.Error(err, "Failed to get wireguard")
-
 		return ctrl.Result{}, err
-
 	}
 
 	if !wireguard.Status.Ready {
-		log.Info("Waiting for wireguard to be ready")
-		newPeer.Status.Status = vpnv1alpha1.Error
-		newPeer.Status.Message = fmt.Sprintf("Waiting for %s to be ready", wireguard.Name)
-		if err := patchHelper.Patch(ctx, newPeer); err != nil {
-			return ctrl.Result{}, err
-		}
-
+		log.Info("Wireguard server is not ready")
+		conditions.MarkFalse(peer, vpnv1alpha1.WireguardPeerReadyCondition, vpnv1alpha1.WireguardServerNotReadyReason, crhelperTypes.ConditionSeverityError, "Wireguard server is not ready")
 		return ctrl.Result{}, nil
 	}
 
-	wireguardSecret := &corev1.Secret{}
-	err = r.Get(ctx, types.NamespacedName{Name: newPeer.Spec.WireguardRef, Namespace: newPeer.Namespace}, wireguardSecret)
-
-	if len(newPeer.OwnerReferences) == 0 {
-		log.Info("Waiting for owner reference to be set " + wireguard.Name + " " + newPeer.Name)
-		if err := ctrl.SetControllerReference(wireguard, newPeer, r.Scheme); err != nil {
+	if len(peer.OwnerReferences) == 0 {
+		log.Info("Waiting for owner reference to be set " + wireguard.Name + " " + peer.Name)
+		if err := ctrl.SetControllerReference(wireguard, peer, r.Scheme); err != nil {
 			log.Error(err, "Failed to update peer with controller reference")
-			return ctrl.Result{}, err
-		}
-		if err := patchHelper.Patch(ctx, newPeer); err != nil {
 			return ctrl.Result{}, err
 		}
 
 		return ctrl.Result{Requeue: true}, nil
 	}
 
-	if newPeer.Status.Config == "" {
-		newPeer.Status.Status = vpnv1alpha1.Pending
-		newPeer.Status.Message = "Waiting config to be updated"
-		if err := patchHelper.Patch(ctx, newPeer); err != nil {
+	if peer.Status.Config == "" {
+		conditions.MarkFalse(peer, vpnv1alpha1.WireguardPeerReadyCondition, vpnv1alpha1.WaitingForConfigReason, crhelperTypes.ConditionSeverityError, "Wireguard peer config has not yet been set")
+	} else {
+		var config string
+		config = peer.Status.Config
+		privateKey, err := r.getPrivateKey(ctx, peer)
+		if err != nil {
+			log.Error(err, "Failed to get private key for generating config")
+			conditions.MarkFalse(peer, vpnv1alpha1.WireguardPeerReadyCondition, vpnv1alpha1.FailedToGetPrivateKeyReason, crhelperTypes.ConditionSeverityError, err.Error())
+			return ctrl.Result{Requeue: true}, err
+		}
+
+		config = strings.ReplaceAll(config, "${PRIVATE_KEY}", privateKey)
+		configSecret := r.configSecretForPeer(peer, config)
+		log.Info("Creating a new config secret", "secret.Namespace", configSecret.Namespace, "secret.Name", configSecret.Name)
+		if err := ctrl.SetControllerReference(peer, configSecret, r.Scheme); err != nil {
+			log.Error(err, "Error setting ControllerReference for peer config secret")
 			return ctrl.Result{}, err
+		}
+		if err := crhelper.Secret(ctx, r.Client, configSecret, log); err != nil {
+			log.Error(err, "Error reconciling config Secret", "secret", configSecret.Name, "namespace", configSecret.Namespace)
+			conditions.MarkFalse(peer, vpnv1alpha1.WireguardPeerReadyCondition, vpnv1alpha1.FailedToCreateSecretReason, crhelperTypes.ConditionSeverityError, err.Error())
+			return ctrl.Result{}, err
+		}
+		peer.Status.ConfigRef = corev1.SecretKeySelector{
+			LocalObjectReference: corev1.LocalObjectReference{
+				Name: configSecret.Name,
+			},
+			Key: "wg0.conf",
+		}
+
+		conditions.MarkTrue(peer, vpnv1alpha1.WireguardPeerReadyCondition)
+	}
+
+	readyCondition := conditions.Get(peer, crhelperTypes.ReadyCondition)
+	if readyCondition != nil {
+		switch readyCondition.Status {
+		case corev1.ConditionFalse, corev1.ConditionUnknown:
+			peer.Status.Ready = false
+		case corev1.ConditionTrue:
+			peer.Status.Ready = true
 		}
 	}
 
@@ -185,7 +205,7 @@ func (r *WireguardPeerReconciler) Reconcile(ctx context.Context, req ctrl.Reques
 func (r *WireguardPeerReconciler) secretForPeer(m *vpnv1alpha1.WireguardPeer, privateKey string, publicKey string) *corev1.Secret {
 	return &corev1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      m.Name + "-peer",
+			Name:      m.Name + "-peer-keys",
 			Namespace: m.Namespace,
 			Labels:    labelsForWireguard(m.Name),
 		},
@@ -193,9 +213,56 @@ func (r *WireguardPeerReconciler) secretForPeer(m *vpnv1alpha1.WireguardPeer, pr
 	}
 }
 
+func (r *WireguardPeerReconciler) configSecretForPeer(m *vpnv1alpha1.WireguardPeer, config string) *corev1.Secret {
+	return &corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      m.Name + "-peer-config",
+			Namespace: m.Namespace,
+			Labels:    labelsForWireguard(m.Name),
+		},
+		Data: map[string][]byte{"wg0.conf": []byte(config)},
+	}
+}
+
+func (r *WireguardPeerReconciler) getPrivateKey(ctx context.Context, peer *vpnv1alpha1.WireguardPeer) (string, error) {
+	keySecret := &corev1.Secret{}
+	err := r.Get(ctx, types.NamespacedName{Name: peer.Spec.PrivateKeyRef.Name, Namespace: peer.Namespace}, keySecret)
+	if err != nil {
+		return "", err
+	}
+	if privKey, ok := keySecret.Data[peer.Spec.PrivateKeyRef.Key]; ok {
+		return string(privKey), nil
+	}
+	return "", fmt.Errorf("private key not found in secret")
+}
+
 // SetupWithManager sets up the controller with the Manager.
 func (r *WireguardPeerReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&vpnv1alpha1.WireguardPeer{}).
+		Owns(&corev1.Secret{}).
 		Complete(r)
+}
+
+func patchWireguardPeer(ctx context.Context, patchHelper *patch.Helper, wireguardPeer *vpnv1alpha1.WireguardPeer) error {
+	// Always update the readyCondition by summarizing the state of other conditions.
+	// A step counter is added to represent progress during the provisioning process (instead we are hiding it during the deletion process).
+	conditions.SetSummary(wireguardPeer,
+		conditions.WithConditions(
+			vpnv1alpha1.WireguardPeerReadyCondition,
+		),
+		conditions.WithStepCounterIf(wireguardPeer.ObjectMeta.DeletionTimestamp.IsZero()),
+		conditions.WithStepCounter(),
+	)
+
+	// Patch the object, ignoring conflicts on the conditions owned by this controller.
+	return patchHelper.Patch(
+		ctx,
+		wireguardPeer,
+		patch.WithOwnedConditions{Conditions: []crhelperTypes.ConditionType{
+			crhelperTypes.ReadyCondition,
+			vpnv1alpha1.WireguardPeerReadyCondition,
+		},
+		},
+	)
 }

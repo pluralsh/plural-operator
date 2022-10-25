@@ -19,7 +19,9 @@ package vpn
 import (
 	"context"
 	"fmt"
+	"net"
 	"strconv"
+	"strings"
 
 	"github.com/go-logr/logr"
 	"github.com/korylprince/ipnetgen"
@@ -46,11 +48,15 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
-// Port wireguard runs on
-const defaultWireguardPort = int32(51820)
+const (
+	// Port wireguard runs on
+	defaultWireguardPort = int32(51820)
 
-// Port of the wireguard prometheus exporter
-const metricsPort = 9586
+	// Port of the wireguard prometheus exporter
+	metricsPort = 9586
+
+	defaultNetworkCidr = "10.8.0.1/24"
+)
 
 // WireguardServerReconciler reconciles a Wireguard object
 type WireguardServerReconciler struct {
@@ -95,6 +101,9 @@ func (r *WireguardServerReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		wireguardPort = *wireguardInstance.Spec.Port
 	}
 
+	var wireguardCIDR string
+	wireguardCIDR = defaultNetworkCidr
+
 	// The PatchHelper needs to be instantiated before the status is changed
 	// this is because it performs a diff between the instantiated status and
 	// the object passed in the Path function
@@ -102,6 +111,26 @@ func (r *WireguardServerReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 	if err != nil {
 		log.Error(err, "Error getting patchHelper for WireguardServer")
 		return ctrl.Result{}, err
+	}
+
+	// Always attempt to Patch the Wireguard Server object and status after each reconciliation.
+	// This defer block needs to be defined before other code so it is exectued after `ctrl.Result{}` is returned
+	defer func() {
+		if err := patchWireguardServer(ctx, patchHelper, wireguardInstance); err != nil {
+			log.Error(err, "failed to patch Wireguard Server Status")
+			utilruntime.HandleError(err)
+		}
+	}()
+
+	// set the network CIDR and check if it is valid
+	if wireguardInstance.Spec.NetworkCIDR != "" {
+		if _, _, err := net.ParseCIDR(wireguardInstance.Spec.NetworkCIDR); err != nil {
+			log.Error(err, "NetworkCIDR is invalid")
+			conditions.MarkFalse(wireguardInstance, vpnv1alpha1.WireguardServerReadyCondition, vpnv1alpha1.InvalidCIDRReason, crhelperTypes.ConditionSeverityError, err.Error())
+			return ctrl.Result{}, nil
+		} else {
+			wireguardCIDR = wireguardInstance.Spec.NetworkCIDR
+		}
 	}
 
 	// Reconcile Service for the wireguard server
@@ -115,6 +144,7 @@ func (r *WireguardServerReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		conditions.MarkFalse(wireguardInstance, vpnv1alpha1.WireguardServerReadyCondition, vpnv1alpha1.FailedToCreateServiceReason, crhelperTypes.ConditionSeverityError, err.Error())
 		return ctrl.Result{}, err
 	} else {
+		//TODO: it shouldn't be set to ready until an IP is available
 		conditions.MarkTrue(wireguardInstance, vpnv1alpha1.WireguardServerReadyCondition)
 	}
 
@@ -136,9 +166,9 @@ func (r *WireguardServerReconciler) Reconcile(ctx context.Context, req ctrl.Requ
 		publicKey := string(foundSecret.Data["publicKey"])
 		wgConfig := fmt.Sprintf(`[Interface]
 PrivateKey = %s
-Address = 10.8.0.1/24
+Address = %s
 ListenPort = %v
-`, privateKey, wireguardPort)
+`, privateKey, wireguardCIDR, wireguardPort)
 
 		peerConfig := ""
 
@@ -154,9 +184,9 @@ ListenPort = %v
 			if peer.Spec.WireguardRef != wireguardInstance.Name {
 				continue
 			}
-			// if peer.Spec.PublicKey == "" {
-			// 	continue
-			// }
+			if peer.Spec.PublicKey == "" {
+				continue
+			}
 
 			peerConfig = peerConfig + fmt.Sprintf("\n[Peer]\nPublicKey = %s\nallowedIps = %s\n\n", peer.Spec.PublicKey, peer.Spec.Address)
 		}
@@ -190,9 +220,9 @@ ListenPort = %v
 
 			wgConfig := fmt.Sprintf(`[Interface]
 PrivateKey = %s
-Address = 10.8.0.1/24
+Address = %s
 ListenPort = %v
-`, privateKey, wireguardPort)
+`, privateKey, wireguardCIDR, wireguardPort)
 
 			secret := r.generateSecret(wireguardInstance, privateKey, publicKey, wgConfig)
 			if err := ctrl.SetControllerReference(wireguardInstance, secret, r.Scheme); err != nil {
@@ -240,59 +270,36 @@ ListenPort = %v
 	wireguardInstance.Status.Hostname = hostname
 	wireguardInstance.Status.Port = strconv.Itoa(int(port))
 
-	// configmap
-
-	configFound := &corev1.ConfigMap{}
-	err = r.Get(ctx, types.NamespacedName{Name: wireguardInstance.Name + "-config", Namespace: wireguardInstance.Namespace}, configFound)
-	if err != nil && apierrs.IsNotFound(err) {
-		config := r.configmapForWireguard(wireguardInstance)
-		log.Info("Creating a new config", "config.Namespace", config.Namespace, "config.Name", config.Name)
-
-		if err := ctrl.SetControllerReference(wireguardInstance, config, r.Scheme); err != nil {
-			log.Error(err, "Error setting ControllerReference for ConfigMap")
-			return ctrl.Result{}, err
-		}
-		if err := crhelper.ConfigMap(ctx, r.Client, config, log); err != nil {
-			log.Error(err, "Error reconciling ConfigMap", "secret", config.Name, "namespace", config.Namespace)
-			conditions.MarkFalse(wireguardInstance, vpnv1alpha1.WireguardServerReadyCondition, vpnv1alpha1.FailedToCreateConfigMapReason, crhelperTypes.ConditionSeverityError, err.Error())
-			return ctrl.Result{}, err
-		}
-		return ctrl.Result{}, nil
-	} else if err != nil {
-		log.Error(err, "Failed to get config")
+	dep := r.deploymentForWireguard(wireguardInstance)
+	log.Info("Creating a new dep", "dep.Namespace", dep.Namespace, "dep.Name", dep.Name)
+	if err := ctrl.SetControllerReference(wireguardInstance, dep, r.Scheme); err != nil {
+		log.Error(err, "Error setting ControllerReference for deployment")
+		return ctrl.Result{}, err
+	}
+	if err := crhelper.Deployment(ctx, r.Client, dep, log); err != nil {
+		log.Error(err, "Error reconciling Deployment", "secret", dep.Name, "namespace", dep.Namespace)
+		conditions.MarkFalse(wireguardInstance, vpnv1alpha1.WireguardServerReadyCondition, vpnv1alpha1.FailedToCreateDeploymentReason, crhelperTypes.ConditionSeverityError, err.Error())
 		return ctrl.Result{}, err
 	}
 
-	deploymentFound := &appsv1.Deployment{}
-	err = r.Get(ctx, types.NamespacedName{Name: wireguardInstance.Name + "-dep", Namespace: wireguardInstance.Namespace}, deploymentFound)
-	if err != nil && apierrs.IsNotFound(err) {
-		dep := r.deploymentForWireguard(wireguardInstance)
-		log.Info("Creating a new dep", "dep.Namespace", dep.Namespace, "dep.Name", dep.Name)
-		if err := ctrl.SetControllerReference(wireguardInstance, dep, r.Scheme); err != nil {
-			log.Error(err, "Error setting ControllerReference for deployment")
-			return ctrl.Result{}, err
-		}
-		if err := crhelper.Deployment(ctx, r.Client, dep, log); err != nil {
-			log.Error(err, "Error reconciling Deployment", "secret", dep.Name, "namespace", dep.Namespace)
-			conditions.MarkFalse(wireguardInstance, vpnv1alpha1.WireguardServerReadyCondition, vpnv1alpha1.FailedToCreateDeploymentReason, crhelperTypes.ConditionSeverityError, err.Error())
-			return ctrl.Result{}, err
-		}
-		return ctrl.Result{}, nil
-	} else if err != nil {
-		log.Error(err, "Failed to get dep")
-		return ctrl.Result{}, err
+	var dnsServers []string
+	if wireguardInstance.Spec.DNS != nil {
+		dnsServers = append(dnsServers, wireguardInstance.Spec.DNS...)
 	}
 
-	dns := "1.1.1.1"
 	kubeDnsService := &corev1.Service{}
 	err = r.Get(ctx, types.NamespacedName{Name: "kube-dns", Namespace: "kube-system"}, kubeDnsService)
 	if err == nil {
-		dns = fmt.Sprintf("%s, %s.svc.cluster.local", kubeDnsService.Spec.ClusterIP, wireguardInstance.Namespace)
+		dnsServers = append(dnsServers, kubeDnsService.Spec.ClusterIP)
 	} else {
-		log.Error(err, "Unable to get kube-dns service")
+		log.Error(err, "Unable to get kube-dns service, only the DNS servers specified in the CR will be used")
 	}
 
-	if err := r.updateWireguardPeers(ctx, req, wireguardInstance, hostname, dns, string(foundSecret.Data["publicKey"]), wireguardInstance.Spec.Mtu); err != nil {
+	dns := strings.Join(dnsServers, ", ")
+
+	allowedIPs := strings.Join(wireguardInstance.Spec.AllowedIPs, ", ")
+
+	if err := r.updateWireguardPeers(ctx, req, wireguardInstance, wireguardCIDR, hostname, dns, allowedIPs, string(foundSecret.Data["publicKey"]), wireguardInstance.Spec.Mtu); err != nil {
 		return ctrl.Result{}, err
 	}
 
@@ -305,14 +312,6 @@ ListenPort = %v
 			wireguardInstance.Status.Ready = true
 		}
 	}
-
-	// Always attempt to Patch the Wireguard Server object and status after each reconciliation.
-	defer func() {
-		if err := patchWireguardServer(ctx, patchHelper, wireguardInstance); err != nil {
-			log.Error(err, "failed to patch Wireguard Server Status")
-			utilruntime.HandleError(err)
-		}
-	}()
 
 	return ctrl.Result{}, nil
 }
@@ -427,8 +426,9 @@ func patchWireguardServer(ctx context.Context, patchHelper *patch.Helper, wiregu
 	)
 }
 
-func (r *WireguardServerReconciler) getUsedIps(peers *vpnv1alpha1.WireguardPeerList) []string {
-	usedIps := []string{"10.8.0.0", "10.8.0.1"}
+func (r *WireguardServerReconciler) getUsedIps(peers *vpnv1alpha1.WireguardPeerList, reservedAddresses []string) []string {
+	usedIps := []string{}
+	usedIps = append(usedIps, reservedAddresses...)
 	for _, p := range peers.Items {
 		usedIps = append(usedIps, p.Spec.Address)
 
@@ -458,18 +458,20 @@ func getAvaialbleIp(cidr string, usedIps []string) (string, error) {
 	return "", fmt.Errorf("No available ip found in %s", cidr)
 }
 
-func (r *WireguardServerReconciler) updateWireguardPeers(ctx context.Context, req ctrl.Request, wireguard *vpnv1alpha1.WireguardServer, serverAddress string, dns string, serverPublicKey string, serverMtu string) error {
+func (r *WireguardServerReconciler) updateWireguardPeers(ctx context.Context, req ctrl.Request, wireguard *vpnv1alpha1.WireguardServer, wireguardCIDR string, serverAddress string, dns string, allowedIPs string, serverPublicKey string, serverMtu string) error {
 
 	peers, err := r.getWireguardPeers(ctx, req)
 	if err != nil {
 		return err
 	}
 
-	usedIps := r.getUsedIps(peers)
+	ipv4Addr, ipv4Net, _ := net.ParseCIDR(wireguardCIDR)
+
+	usedIps := r.getUsedIps(peers, []string{ipv4Addr.String(), ipv4Net.IP.String()})
 
 	for _, peer := range peers.Items {
 		if peer.Spec.Address == "" {
-			ip, err := getAvaialbleIp("10.8.0.0/24", usedIps)
+			ip, err := getAvaialbleIp(ipv4Net.String(), usedIps)
 
 			if err != nil {
 				return err
@@ -484,12 +486,10 @@ func (r *WireguardServerReconciler) updateWireguardPeers(ctx context.Context, re
 			usedIps = append(usedIps, ip)
 		}
 
-		newConfig := fmt.Sprintf(`
-echo "
-[Interface]
-PrivateKey = $(kubectl get secret %s-peer --template={{.data.privateKey}} -n %s | base64 -d)
+		newConfig := fmt.Sprintf(`[Interface]
+PrivateKey = ${PRIVATE_KEY}
 Address = %s
-DNS = %s`, peer.Name, peer.Namespace, peer.Spec.Address, dns)
+DNS = %s`, peer.Spec.Address, dns)
 
 		if serverMtu != "" {
 			newConfig = newConfig + "\nMTU = " + serverMtu
@@ -498,12 +498,10 @@ DNS = %s`, peer.Name, peer.Namespace, peer.Spec.Address, dns)
 		newConfig = newConfig + fmt.Sprintf(`
 [Peer]
 PublicKey = %s
-AllowedIPs = 0.0.0.0/0
-Endpoint = %s:%s"`, serverPublicKey, serverAddress, wireguard.Status.Port)
-		if peer.Status.Config != newConfig || peer.Status.Status != vpnv1alpha1.Ready {
+AllowedIPs = %s
+Endpoint = %s:%s`, serverPublicKey, allowedIPs, serverAddress, wireguard.Status.Port)
+		if peer.Status.Config != newConfig {
 			peer.Status.Config = newConfig
-			peer.Status.Status = vpnv1alpha1.Ready
-			peer.Status.Message = "Peer configured"
 			if err := r.Status().Update(ctx, &peer); err != nil {
 				return err
 			}
@@ -528,16 +526,6 @@ func (r *WireguardServerReconciler) getWireguardPeers(ctx context.Context, req c
 	}
 
 	return relatedPeers, nil
-}
-
-func (r *WireguardServerReconciler) configmapForWireguard(wireguardServer *vpnv1alpha1.WireguardServer) *corev1.ConfigMap {
-	return &corev1.ConfigMap{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      wireguardServer.Name + "-config",
-			Namespace: wireguardServer.Namespace,
-			Labels:    labelsForWireguard(wireguardServer.Name),
-		},
-	}
 }
 
 func (r *WireguardServerReconciler) deploymentForWireguard(s *vpnv1alpha1.WireguardServer) *appsv1.Deployment {

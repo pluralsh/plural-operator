@@ -48,8 +48,23 @@ spec:
           spec:
             description: WireguardServerSpec defines the desired state of WireguardServer
             properties:
+              allowedIPs:
+                description: The CIDRs that peers can connect to through the wireguard
+                  server. Use 0.0.0.0/0 to allow all.
+                items:
+                  type: string
+                type: array
+              dns:
+                description: The DNS servers to use for the wireguard server
+                items:
+                  type: string
+                type: array
               mtu:
                 description: Network MTU to use for the VPN
+                type: string
+              networkCIDR:
+                default: 10.8.0.1/24
+                description: The CIDR to use for the wireguard server and network
                 type: string
               port:
                 description: Port for the wireguard server

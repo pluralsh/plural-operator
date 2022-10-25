@@ -46,12 +46,25 @@ type WireguardServerSpec struct {
 	// WireguardImage for wireguard k8s deployment
 	WireguardImage string `json:"wireguardImage"`
 
+	// +optional
 	// Sidecars for wireguard k8s deployment
 	Sidecars []corev1.Container `json:"sidecars,omitempty"`
+
+	// +optional
+	// +kubebuilder:default:="10.8.0.1/24"
+	// The CIDR to use for the wireguard server and network
+	NetworkCIDR string `json:"networkCIDR,omitempty"`
+
+	// +optional
+	// The DNS servers to use for the wireguard server
+	DNS []string `json:"dns,omitempty"`
+
+	// The CIDRs that peers can connect to through the wireguard server. Use 0.0.0.0/0 to allow all.
+	AllowedIPs []string `json:"allowedIPs,omitempty"`
 }
 
 const (
-	// WireguardServerReadyCondition reports on current status of the Equinix Metal device. Ready indicates the instance is in a Running state.
+	// WireguardServerReadyCondition reports on current status of the Wireguard Server. Ready indicates the instance is in a Running state.
 	WireguardServerReadyCondition crhelperTypes.ConditionType = "WireguardServerReady"
 
 	// FailedToCreateServiceReason used when the service could not be created.
@@ -71,6 +84,9 @@ const (
 
 	// ServiceNotReadyReason used when service does not yet have a valid IP or hostname
 	ServiceNotReadyReason = "ServiceNotReady"
+
+	// InvalidCIDRReason used when the CIDR of the network is invalid
+	InvalidCIDRReason = "InvalidCIDR"
 
 	// // InstanceStoppedReason instance is in a stopped state.
 	// InstanceStoppedReason = "InstanceStopped"
