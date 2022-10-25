@@ -51,7 +51,7 @@ const defaultWireguardPort = int32(51820)
 // Port of the wireguard prometheus exporter
 const metricsPort = 9586
 
-const wireguardDefaultImage = "ghcr.io/jodevsa/wireguard-operator/wireguard:sha-2b596d92a59502ed032270dffb564c30859d71ee"
+const wireguardDefaultImage = "dkr.plural.sh/plural-operator/wireguard:0.0.1"
 
 // WireguardServerReconciler reconciles a Wireguard object
 type WireguardServerReconciler struct {
