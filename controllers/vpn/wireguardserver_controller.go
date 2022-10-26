@@ -363,6 +363,7 @@ func (r *WireguardServerReconciler) generateService(wireguardInstance *vpnv1alph
 			Type:     wireguardInstance.Spec.ServiceType,
 			Selector: labelsForWireguard(wireguardInstance.Name),
 			Ports: []corev1.ServicePort{{
+				Name:       "wireguard",
 				Protocol:   corev1.ProtocolUDP,
 				Port:       wireguardPort,
 				TargetPort: intstr.FromInt(int(wireguardPort)),
@@ -385,6 +386,7 @@ func (r *WireguardServerReconciler) generateMetricsService(wireguardInstance *vp
 			Type:     corev1.ServiceTypeClusterIP,
 			Selector: labelsForWireguard(wireguardInstance.Name),
 			Ports: []corev1.ServicePort{{
+				Name:       "metrics",
 				Protocol:   corev1.ProtocolTCP,
 				Port:       metricsPort,
 				TargetPort: intstr.FromInt(metricsPort),
