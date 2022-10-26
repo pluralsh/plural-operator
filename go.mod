@@ -11,11 +11,11 @@ require (
 	github.com/onsi/gomega v1.19.0
 	github.com/pluralsh/controller-reconcile-helper v0.0.4
 	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.51.1
-	github.com/stretchr/testify v1.7.0
+	github.com/stretchr/testify v1.8.0
 	golang.zx2c4.com/wireguard/wgctrl v0.0.0-20220916014741-473347a5e6e3
-	k8s.io/api v0.24.2
-	k8s.io/apimachinery v0.24.2
-	k8s.io/client-go v0.24.2
+	k8s.io/api v0.24.7
+	k8s.io/apimachinery v0.24.7
+	k8s.io/client-go v0.24.7
 	sigs.k8s.io/controller-runtime v0.12.1
 	sigs.k8s.io/yaml v1.3.0
 )
@@ -91,7 +91,7 @@ require (
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/tomb.v1 v1.0.0-20141024135613-dd632973f1e7 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
-	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
+	gopkg.in/yaml.v3 v3.0.1 // indirect
 	istio.io/api v0.0.0-20220413180505-1574de06b7bd // indirect
 	istio.io/client-go v1.13.3 // indirect
 	istio.io/gogo-genproto v0.0.0-20211208193508-5ab4acc9eb1e // indirect
