@@ -195,7 +195,7 @@ ListenPort = %v
 				continue
 			}
 
-			peerConfig = peerConfig + fmt.Sprintf("\n[Peer]\nPublicKey = %s\nallowedIps = %s\n\n", peer.Spec.PublicKey, peer.Spec.Address)
+			peerConfig = peerConfig + fmt.Sprintf("\n[Peer]\n# friendly_name = %s\nPublicKey = %s\nallowedIps = %s\n\n", peer.Name, peer.Spec.PublicKey, peer.Spec.Address)
 		}
 
 		wgConfig = wgConfig + peerConfig

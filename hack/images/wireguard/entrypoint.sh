@@ -28,7 +28,7 @@ function watch_and_update() {
   trap 'shutdown_wg "$1"' SIGTERM SIGINT SIGQUIT
   cp /tmp/wireguard/config /etc/wireguard/wg0.conf
   wg-quick up wg0
-  /usr/local/bin/prometheus_wireguard_exporter &>/dev/null &
+  /usr/local/bin/prometheus_wireguard_exporter -n /etc/wireguard/wg0.conf &>/dev/null &
   fswatch -o /tmp/wireguard/ | (while read; do update_config; done)
 }
 

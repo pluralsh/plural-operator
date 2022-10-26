@@ -19,7 +19,7 @@ set -euo pipefail
 cd $(dirname $0)
 
 REPOSITORY="${REPOSITORY:-dkr.plural.sh/bootstrap/wireguard-server}"
-VERSION=0.1.1
+VERSION=0.1.2
 SUFFIX=""
 
 docker buildx build --platform linux/amd64 --no-cache --pull --push -f "Dockerfile" -t "${REPOSITORY}:${VERSION}${SUFFIX}" .
