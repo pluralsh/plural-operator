@@ -196,8 +196,6 @@ ListenPort = %v
 
 		wgConfig = wgConfig + peerConfig
 
-		log.Info("secret", "wgconfig", wgConfig)
-
 		secret := r.generateSecret(wireguardInstance, privateKey, publicKey, wgConfig)
 		if err := ctrl.SetControllerReference(wireguardInstance, secret, r.Scheme); err != nil {
 			log.Error(err, "Error setting ControllerReference for Secret")
@@ -324,7 +322,6 @@ func (r *WireguardServerReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&vpnv1alpha1.WireguardServer{}).
 		Owns(&corev1.Service{}).
-		Owns(&corev1.ConfigMap{}).
 		Owns(&appsv1.Deployment{}).
 		Owns(&corev1.Secret{}).
 		Watches(&source.Kind{Type: &vpnv1alpha1.WireguardPeer{}},
@@ -534,6 +531,11 @@ func (r *WireguardServerReconciler) getWireguardPeers(ctx context.Context, req c
 func (r *WireguardServerReconciler) deploymentForWireguard(s *vpnv1alpha1.WireguardServer, wireguardIPv4Net *net.IPNet) *appsv1.Deployment {
 	ls := labelsForWireguard(s.Name)
 	replicas := int32(1)
+	if s.Spec.EnableHA {
+		replicas = 3
+	}
+
+	volumeMode := int32(0644)
 
 	dep := &appsv1.Deployment{
 		ObjectMeta: metav1.ObjectMeta{
@@ -564,7 +566,8 @@ func (r *WireguardServerReconciler) deploymentForWireguard(s *vpnv1alpha1.Wiregu
 							Name: "config",
 							VolumeSource: corev1.VolumeSource{
 								Secret: &corev1.SecretVolumeSource{
-									SecretName: s.Name,
+									SecretName:  s.Name,
+									DefaultMode: &volumeMode,
 								},
 							},
 						}},
@@ -581,18 +584,20 @@ func (r *WireguardServerReconciler) deploymentForWireguard(s *vpnv1alpha1.Wiregu
 									ContainerPort: defaultWireguardPort,
 									Name:          "wireguard",
 									Protocol:      corev1.ProtocolUDP,
-								}},
+								},
+								{
+									ContainerPort: metricsPort,
+									Name:          "metrics",
+									Protocol:      corev1.ProtocolTCP,
+								},
+							},
 							Env: []corev1.EnvVar{
 								{
 									Name:  "SUB_NET",
 									Value: wireguardIPv4Net.String(),
 								},
 							},
-							// EnvFrom: []corev1.EnvFromSource{{
-							// 	ConfigMapRef: &corev1.ConfigMapEnvSource{
-							// 		LocalObjectReference: corev1.LocalObjectReference{Name: s.Name + "-config"},
-							// 	},
-							// }},
+							Resources: s.Spec.Resources,
 							VolumeMounts: []corev1.VolumeMount{
 								{
 									Name:      "socket",
@@ -602,6 +607,26 @@ func (r *WireguardServerReconciler) deploymentForWireguard(s *vpnv1alpha1.Wiregu
 									Name:      "config",
 									MountPath: "/tmp/wireguard/",
 								}},
+							LivenessProbe: &corev1.Probe{
+								ProbeHandler: corev1.ProbeHandler{
+									HTTPGet: &corev1.HTTPGetAction{
+										Path: "/metrics",
+										Port: intstr.FromInt(metricsPort),
+									},
+								},
+								InitialDelaySeconds: 10,
+								PeriodSeconds:       10,
+							},
+							ReadinessProbe: &corev1.Probe{
+								ProbeHandler: corev1.ProbeHandler{
+									HTTPGet: &corev1.HTTPGetAction{
+										Path: "/metrics",
+										Port: intstr.FromInt(metricsPort),
+									},
+								},
+								InitialDelaySeconds: 10,
+								PeriodSeconds:       10,
+							},
 						}},
 				},
 			},
@@ -612,6 +637,18 @@ func (r *WireguardServerReconciler) deploymentForWireguard(s *vpnv1alpha1.Wiregu
 		dep.Spec.Template.Spec.Containers = append(dep.Spec.Template.Spec.Containers, sidecar)
 	}
 
+	if s.Spec.EnableHA {
+		dep.Spec.Template.Spec.TopologySpreadConstraints = []corev1.TopologySpreadConstraint{
+			{
+				MaxSkew:           1,
+				TopologyKey:       "topology.kubernetes.io/zone",
+				WhenUnsatisfiable: corev1.DoNotSchedule,
+				LabelSelector: &metav1.LabelSelector{
+					MatchLabels: ls,
+				},
+			},
+		}
+	}
 	return dep
 }
 

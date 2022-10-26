@@ -9,33 +9,31 @@ ARG wg_tools_tag=v1.0.20210914
 RUN apt-get update -qq && apt-get install -yq git build-essential libmnl-dev iptables
 
 
-RUN git clone https://git.zx2c4.com/wireguard-go && \
+RUN git clone https://github.com/WireGuard/wireguard-go.git && \
     cd wireguard-go && \
     git checkout $wg_go_tag && \
     make && \
     make install
 
 ENV WITH_WGQUICK=yes
-RUN git clone https://git.zx2c4.com/wireguard-tools && \
+RUN git clone https://github.com/WireGuard/wireguard-tools.git && \
     cd wireguard-tools && \
     git checkout $wg_tools_tag && \
     cd src && \
     make && \
     make install
 
-
+FROM mindflavor/prometheus-wireguard-exporter:3.6.3 as exporter
 
 FROM debian:bookworm-slim
 
 
-ENTRYPOINT ["/entrypoint.sh"]
 WORKDIR /etc/wireguard
-
-COPY entrypoint.sh /entrypoint.sh
 
 COPY --from=builder /usr/bin/wireguard-go /usr/local/bin/wireguard-go
 COPY --from=builder /usr/bin/wg-quick /usr/local/bin/wg-quick
 COPY --from=builder /usr/bin/wg /usr/local/bin/wg
+COPY --from=exporter /usr/local/bin/prometheus_wireguard_exporter /usr/local/bin/prometheus_wireguard_exporter
 
 RUN apt-get update -qq && apt-get install -yq --no-install-suggests --no-install-recommends iproute2 iptables gettext-base fswatch
 
@@ -47,5 +45,10 @@ ENV WG_SUDO=1
 ENV WG_THREADS=4
 ENV WG_QUICK_USERSPACE_IMPLEMENTATION=wireguard-go
 
+WORKDIR /
+COPY entrypoint.sh /entrypoint.sh
+ENTRYPOINT ["/entrypoint.sh"]
+
+WORKDIR /etc/wireguard
 
 CMD ["bash"]

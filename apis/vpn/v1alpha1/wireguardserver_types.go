@@ -61,6 +61,15 @@ type WireguardServerSpec struct {
 
 	// The CIDRs that peers can connect to through the wireguard server. Use 0.0.0.0/0 to allow all.
 	AllowedIPs []string `json:"allowedIPs,omitempty"`
+
+	// +optional
+	// +kubebuilder:default:=false
+	// Deploy 3 wireguard servers so that the VPN can be highly available and spread over 3 availability zones
+	EnableHA bool `json:"enableHA,omitempty"`
+
+	// +optional
+	// The resources to set for the wireguard server
+	Resources corev1.ResourceRequirements `json:"resources,omitempty"`
 }
 
 const (
