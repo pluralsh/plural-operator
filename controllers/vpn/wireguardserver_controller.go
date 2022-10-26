@@ -65,9 +65,9 @@ type WireguardServerReconciler struct {
 	Log    logr.Logger
 }
 
-//+kubebuilder:rbac:groups=vpn.plural.sh,resources=wireguards,verbs=get;list;watch;create;update;patch;delete
-//+kubebuilder:rbac:groups=vpn.plural.sh,resources=wireguards/status,verbs=get;update;patch
-//+kubebuilder:rbac:groups=vpn.plural.sh,resources=wireguards/finalizers,verbs=update
+//+kubebuilder:rbac:groups=vpn.plural.sh,resources=wireguardservers,verbs=get;list;watch;create;update;patch;delete
+//+kubebuilder:rbac:groups=vpn.plural.sh,resources=wireguardservers/status,verbs=get;update;patch
+//+kubebuilder:rbac:groups=vpn.plural.sh,resources=wireguardservers/finalizers,verbs=update
 
 //+kubebuilder:rbac:groups="",resources=secrets,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=apps,resources=deployments,verbs=get;list;watch;create;update;patch;delete
