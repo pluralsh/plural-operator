@@ -52,6 +52,7 @@ spec:
                 required:
                 - key
                 type: object
+                x-kubernetes-map-type: atomic
             required:
             - secretRef
             type: object

@@ -1,0 +1,7 @@
+apiVersion: vpn.plural.sh/v1alpha1
+kind: WireguardPeer
+metadata:
+  name: wireguardpeer-sample
+  namespace: default
+spec:
+  wireguardRef: wireguardserver-sample
