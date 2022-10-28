@@ -81,13 +81,13 @@ deploy: manifests kustomize ## Deploy controller to the K8s cluster specified in
 undeploy: ## Undeploy controller from the K8s cluster specified in ~/.kube/config.
 	$(KUSTOMIZE) build config/default | kubectl delete -f -
 
-run-client-gen:
+run-client-gen: client-gen
 	$(CLIENT_GEN) --clientset-name versioned --input-base github.com/pluralsh/plural-operator/apis --input platform/v1alpha1,vpn/v1alpha1 --output-package github.com/pluralsh/plural-operator/generated/client/clientset --go-header-file hack/boilerplate.go.txt
 
-run-lister-gen:
+run-lister-gen: lister-gen
 	$(LISTER_GEN) --input-dirs github.com/pluralsh/plural-operator/apis/platform/v1alpha1,github.com/pluralsh/plural-operator/apis/vpn/v1alpha1 --output-package github.com/pluralsh/plural-operator/generated/client/listers --go-header-file hack/boilerplate.go.txt
 
-run-informer-gen:
+run-informer-gen: informer-gen
 	$(INFORMER_GEN) --input-dirs github.com/pluralsh/plural-operator/apis/platform/v1alpha1,github.com/pluralsh/plural-operator/apis/vpn/v1alpha1  --versioned-clientset-package github.com/pluralsh/plural-operator/generated/client/clientset/versioned --listers-package github.com/pluralsh/plural-operator/generated/client/listers --output-package github.com/pluralsh/plural-operator/generated/client/informers --go-header-file hack/boilerplate.go.txt
 
 generate-client: run-client-gen run-lister-gen run-informer-gen
