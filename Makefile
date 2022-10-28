@@ -32,10 +32,10 @@ help: ## Display this help.
 ##@ Development
 
 manifests: controller-gen ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition objects.
-	$(CONTROLLER_GEN) $(CRD_OPTIONS) rbac:roleName=manager-role webhook paths="./..." output:crd:artifacts:config=config/crd/bases
+	$(CONTROLLER_GEN) $(CRD_OPTIONS) rbac:roleName=manager-role webhook paths="./apis/..." output:crd:artifacts:config=config/crd/bases
 
-generate: controller-gen ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations.
-	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./..."
+generate: controller-gen generate-client ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations and the clientset, informers and listers.
+	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./apis/..."
 
 fmt: ## Run go fmt against code.
 	go fmt ./...
@@ -81,6 +81,19 @@ deploy: manifests kustomize ## Deploy controller to the K8s cluster specified in
 undeploy: ## Undeploy controller from the K8s cluster specified in ~/.kube/config.
 	$(KUSTOMIZE) build config/default | kubectl delete -f -
 
+run-client-gen: client-gen
+	$(CLIENT_GEN) --clientset-name versioned --input-base github.com/pluralsh/plural-operator/apis --input platform/v1alpha1,vpn/v1alpha1 --output-package github.com/pluralsh/plural-operator/generated/client/clientset --go-header-file hack/boilerplate.go.txt
+
+run-lister-gen: lister-gen
+	$(LISTER_GEN) --input-dirs github.com/pluralsh/plural-operator/apis/platform/v1alpha1,github.com/pluralsh/plural-operator/apis/vpn/v1alpha1 --output-package github.com/pluralsh/plural-operator/generated/client/listers --go-header-file hack/boilerplate.go.txt
+
+run-informer-gen: informer-gen
+	$(INFORMER_GEN) --input-dirs github.com/pluralsh/plural-operator/apis/platform/v1alpha1,github.com/pluralsh/plural-operator/apis/vpn/v1alpha1  --versioned-clientset-package github.com/pluralsh/plural-operator/generated/client/clientset/versioned --listers-package github.com/pluralsh/plural-operator/generated/client/listers --output-package github.com/pluralsh/plural-operator/generated/client/informers --go-header-file hack/boilerplate.go.txt
+
+generate-client: run-client-gen run-lister-gen run-informer-gen
+	rm -rf generated
+	mv github.com/pluralsh/plural-operator/generated generated
+	rm -rf github.com
 
 CONTROLLER_GEN = $(shell pwd)/bin/controller-gen
 controller-gen: ## Download controller-gen locally if necessary.
@@ -90,10 +103,25 @@ KUSTOMIZE = $(shell pwd)/bin/kustomize
 kustomize: ## Download kustomize locally if necessary.
 	$(call go-get-tool,$(KUSTOMIZE),sigs.k8s.io/kustomize/kustomize/v4@v4.5.7)
 
-client-gen:
-	./hack/update-codegen.sh
-	mv github.com/pluralsh/plural-operator/generated generated
-	rm -rf github.com
+CLIENT_GEN = $(shell pwd)/bin/client-gen
+client-gen: ## Download client-gen locally if necessary.
+	$(call go-get-tool,$(CLIENT_GEN),k8s.io/code-generator/cmd/client-gen@v0.25.3)
+
+LISTER_GEN = $(shell pwd)/bin/lister-gen
+lister-gen: ## Download lister-gen locally if necessary.
+	$(call go-get-tool,$(LISTER_GEN),k8s.io/code-generator/cmd/lister-gen@v0.25.3)
+
+INFORMER_GEN = $(shell pwd)/bin/informer-gen
+informer-gen: ## Download informer-gen locally if necessary.
+	$(call go-get-tool,$(INFORMER_GEN),k8s.io/code-generator/cmd/informer-gen@v0.25.3)
+
+DEFFAULTER_GEN = $(shell pwd)/bin/defaulter-gen
+defaulter-gen: ## Download defaulter-gen locally if necessary.
+	$(call go-get-tool,$(DEFFAULTER_GEN),k8s.io/code-generator/cmd/defaulter-gen@v0.25.3)
+
+DEEPCOPY_GEN = $(shell pwd)/bin/deepcopy-gen
+deepcopy-gen: ## Download deepcopy-gen locally if necessary.
+	$(call go-get-tool,$(DEEPCOPY_GEN),k8s.io/code-generator/cmd/deepcopy-gen@v0.25.3)
 
 # go-get-tool will 'go get' any package $2 and install it to $1.
 PROJECT_DIR := $(shell dirname $(abspath $(lastword $(MAKEFILE_LIST))))

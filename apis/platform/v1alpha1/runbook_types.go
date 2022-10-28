@@ -194,6 +194,7 @@ type RunbookStatus struct {
 	Alerts []*RunbookAlertStatus `json:"alerts"`
 }
 
+//+genclient
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
 

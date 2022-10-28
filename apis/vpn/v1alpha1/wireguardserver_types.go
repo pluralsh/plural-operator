@@ -125,6 +125,7 @@ type WireguardServerStatus struct {
 	Conditions crhelperTypes.Conditions `json:"conditions,omitempty"`
 }
 
+//+genclient
 // +kubebuilder:object:root=true
 // +kubebuilder:subresource:status
 // +kubebuilder:printcolumn:name="Hostname",type="string",JSONPath=".status.hostname",description="WireguardServer hostname"

@@ -84,6 +84,7 @@ type WireguardPeerStatus struct {
 	Conditions crhelperTypes.Conditions `json:"conditions,omitempty"`
 }
 
+//+genclient
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
 // +kubebuilder:printcolumn:name="Wireguard Server",type="string",JSONPath=".spec.wireguardRef",description="The Wireguard Server this peer belongs to"
