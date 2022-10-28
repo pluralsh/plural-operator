@@ -63,6 +63,7 @@ type LicenseStatus struct {
 	Secrets map[string]string `json:"secrets"`
 }
 
+//+genclient
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status
 
