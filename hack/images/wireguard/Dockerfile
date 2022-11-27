@@ -23,7 +23,7 @@ RUN git clone https://github.com/WireGuard/wireguard-tools.git && \
     make && \
     make install
 
-FROM mindflavor/prometheus-wireguard-exporter:3.6.3 as exporter
+FROM mindflavor/prometheus-wireguard-exporter:3.6.6 as exporter
 
 FROM debian:bookworm-slim
 
