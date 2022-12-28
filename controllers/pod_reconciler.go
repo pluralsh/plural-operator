@@ -18,6 +18,7 @@ package controllers
 
 import (
 	"context"
+	"strings"
 	"time"
 
 	"github.com/go-logr/logr"
@@ -62,6 +63,14 @@ func (r *PodReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 		return ctrl.Result{}, err
 	}
 
+	if noPluralCreds(&pod) {
+		log.Info("Deleting pod to refresh pull secrets")
+		if err := r.Delete(ctx, &pod); err != nil {
+			log.Error(err, "Failed to delete pod")
+			return ctrl.Result{}, client.IgnoreNotFound(err)
+		}
+	}
+
 	if pod.Annotations == nil {
 		return ctrl.Result{}, nil
 	}
@@ -97,4 +106,33 @@ func (r *PodReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&corev1.Pod{}).
 		Complete(r)
+}
+
+func noPluralCreds(pod *corev1.Pod) bool {
+	for _, creds := range pod.Spec.ImagePullSecrets {
+		if creds.Name == pluralCreds {
+			return false
+		}
+	}
+
+	for _, cs := range pod.Status.ContainerStatuses {
+		if waitingForPluralCreds(cs) {
+			return true
+		}
+	}
+
+	for _, cs := range pod.Status.InitContainerStatuses {
+		if waitingForPluralCreds(cs) {
+			return true
+		}
+	}
+
+	return false
+}
+
+func waitingForPluralCreds(cs corev1.ContainerStatus) bool {
+	return (!cs.Ready &&
+		cs.State.Waiting != nil &&
+		cs.State.Waiting.Reason == "ImagePullBackoff" &&
+		strings.Contains(cs.State.Waiting.Message, "dkr.plural.sh"))
 }
