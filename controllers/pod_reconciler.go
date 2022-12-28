@@ -55,6 +55,7 @@ func (r *PodReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 	log := r.Log.WithValues("pod", req.NamespacedName)
 
 	var pod corev1.Pod
+	log.Info("checking if pod can be expired")
 	if err := r.Get(ctx, req.NamespacedName, &pod); err != nil {
 		if apierrors.IsNotFound(err) {
 			return ctrl.Result{}, nil
@@ -133,6 +134,6 @@ func noPluralCreds(pod *corev1.Pod) bool {
 func waitingForPluralCreds(cs corev1.ContainerStatus) bool {
 	return (!cs.Ready &&
 		cs.State.Waiting != nil &&
-		cs.State.Waiting.Reason == "ImagePullBackoff" &&
+		cs.State.Waiting.Reason == "ImagePullBackOff" &&
 		strings.Contains(cs.State.Waiting.Message, "dkr.plural.sh"))
 }
