@@ -139,7 +139,7 @@ endef
 
 release-vsn:
 	@read -p "Version: " tag; \
-	git checkout master; \
+	git checkout main; \
 	git pull --rebase; \
 	git tag -a $$tag -m "new release"; \
 	git push origin $$tag
