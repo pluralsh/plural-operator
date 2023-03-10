@@ -10,7 +10,7 @@ require (
 	github.com/onsi/ginkgo v1.16.5
 	github.com/onsi/gomega v1.19.0
 	github.com/pluralsh/controller-reconcile-helper v0.0.4
-	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.51.1
+	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.51.2
 	github.com/stretchr/testify v1.7.0
 	golang.zx2c4.com/wireguard/wgctrl v0.0.0-20220916014741-473347a5e6e3
 	k8s.io/api v0.24.2
