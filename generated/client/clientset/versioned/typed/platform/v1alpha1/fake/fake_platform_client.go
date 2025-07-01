@@ -31,10 +31,6 @@ func (c *FakePlatformV1alpha1) ConfigurationOverlays(namespace string) v1alpha1.
 	return &FakeConfigurationOverlays{c, namespace}
 }
 
-func (c *FakePlatformV1alpha1) Dashboards(namespace string) v1alpha1.DashboardInterface {
-	return &FakeDashboards{c, namespace}
-}
-
 func (c *FakePlatformV1alpha1) DefaultStorageClasses(namespace string) v1alpha1.DefaultStorageClassInterface {
 	return &FakeDefaultStorageClasses{c, namespace}
 }
@@ -43,28 +39,12 @@ func (c *FakePlatformV1alpha1) Licenses(namespace string) v1alpha1.LicenseInterf
 	return &FakeLicenses{c, namespace}
 }
 
-func (c *FakePlatformV1alpha1) LogFilters(namespace string) v1alpha1.LogFilterInterface {
-	return &FakeLogFilters{c, namespace}
-}
-
-func (c *FakePlatformV1alpha1) LogTails(namespace string) v1alpha1.LogTailInterface {
-	return &FakeLogTails{c, namespace}
-}
-
-func (c *FakePlatformV1alpha1) Proxies(namespace string) v1alpha1.ProxyInterface {
-	return &FakeProxies{c, namespace}
-}
-
 func (c *FakePlatformV1alpha1) RegistryCredentials(namespace string) v1alpha1.RegistryCredentialInterface {
 	return &FakeRegistryCredentials{c, namespace}
 }
 
 func (c *FakePlatformV1alpha1) ResourceGroups(namespace string) v1alpha1.ResourceGroupInterface {
 	return &FakeResourceGroups{c, namespace}
-}
-
-func (c *FakePlatformV1alpha1) Runbooks(namespace string) v1alpha1.RunbookInterface {
-	return &FakeRunbooks{c, namespace}
 }
 
 func (c *FakePlatformV1alpha1) SecretSyncs(namespace string) v1alpha1.SecretSyncInterface {

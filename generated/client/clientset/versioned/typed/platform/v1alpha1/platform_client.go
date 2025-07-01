@@ -28,15 +28,10 @@ import (
 type PlatformV1alpha1Interface interface {
 	RESTClient() rest.Interface
 	ConfigurationOverlaysGetter
-	DashboardsGetter
 	DefaultStorageClassesGetter
 	LicensesGetter
-	LogFiltersGetter
-	LogTailsGetter
-	ProxiesGetter
 	RegistryCredentialsGetter
 	ResourceGroupsGetter
-	RunbooksGetter
 	SecretSyncsGetter
 	SlashCommandsGetter
 	StatefulSetResizesGetter
@@ -51,10 +46,6 @@ func (c *PlatformV1alpha1Client) ConfigurationOverlays(namespace string) Configu
 	return newConfigurationOverlays(c, namespace)
 }
 
-func (c *PlatformV1alpha1Client) Dashboards(namespace string) DashboardInterface {
-	return newDashboards(c, namespace)
-}
-
 func (c *PlatformV1alpha1Client) DefaultStorageClasses(namespace string) DefaultStorageClassInterface {
 	return newDefaultStorageClasses(c, namespace)
 }
@@ -63,28 +54,12 @@ func (c *PlatformV1alpha1Client) Licenses(namespace string) LicenseInterface {
 	return newLicenses(c, namespace)
 }
 
-func (c *PlatformV1alpha1Client) LogFilters(namespace string) LogFilterInterface {
-	return newLogFilters(c, namespace)
-}
-
-func (c *PlatformV1alpha1Client) LogTails(namespace string) LogTailInterface {
-	return newLogTails(c, namespace)
-}
-
-func (c *PlatformV1alpha1Client) Proxies(namespace string) ProxyInterface {
-	return newProxies(c, namespace)
-}
-
 func (c *PlatformV1alpha1Client) RegistryCredentials(namespace string) RegistryCredentialInterface {
 	return newRegistryCredentials(c, namespace)
 }
 
 func (c *PlatformV1alpha1Client) ResourceGroups(namespace string) ResourceGroupInterface {
 	return newResourceGroups(c, namespace)
-}
-
-func (c *PlatformV1alpha1Client) Runbooks(namespace string) RunbookInterface {
-	return newRunbooks(c, namespace)
 }
 
 func (c *PlatformV1alpha1Client) SecretSyncs(namespace string) SecretSyncInterface {

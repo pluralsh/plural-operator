@@ -27,21 +27,11 @@ import (
 
 type VpnV1alpha1Interface interface {
 	RESTClient() rest.Interface
-	WireguardPeersGetter
-	WireguardServersGetter
 }
 
 // VpnV1alpha1Client is used to interact with features provided by the vpn.plural.sh group.
 type VpnV1alpha1Client struct {
 	restClient rest.Interface
-}
-
-func (c *VpnV1alpha1Client) WireguardPeers(namespace string) WireguardPeerInterface {
-	return newWireguardPeers(c, namespace)
-}
-
-func (c *VpnV1alpha1Client) WireguardServers(namespace string) WireguardServerInterface {
-	return newWireguardServers(c, namespace)
 }
 
 // NewForConfig creates a new VpnV1alpha1Client for the given config.

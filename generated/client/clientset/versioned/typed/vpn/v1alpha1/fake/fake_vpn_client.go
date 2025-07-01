@@ -18,21 +18,12 @@ limitations under the License.
 package fake
 
 import (
-	v1alpha1 "github.com/pluralsh/plural-operator/generated/client/clientset/versioned/typed/vpn/v1alpha1"
 	rest "k8s.io/client-go/rest"
 	testing "k8s.io/client-go/testing"
 )
 
 type FakeVpnV1alpha1 struct {
 	*testing.Fake
-}
-
-func (c *FakeVpnV1alpha1) WireguardPeers(namespace string) v1alpha1.WireguardPeerInterface {
-	return &FakeWireguardPeers{c, namespace}
-}
-
-func (c *FakeVpnV1alpha1) WireguardServers(namespace string) v1alpha1.WireguardServerInterface {
-	return &FakeWireguardServers{c, namespace}
 }
 
 // RESTClient returns a RESTClient that is used to communicate
