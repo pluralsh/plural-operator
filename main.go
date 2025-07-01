@@ -34,7 +34,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
 	platformv1alpha1 "github.com/pluralsh/plural-operator/apis/platform/v1alpha1"
-	vpnv1alpha1 "github.com/pluralsh/plural-operator/apis/vpn/v1alpha1"
 	amv1alpha1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1alpha1"
 
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
@@ -56,7 +55,6 @@ func init() {
 
 	utilruntime.Must(amv1alpha1.AddToScheme(scheme))
 
-	utilruntime.Must(vpnv1alpha1.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 
@@ -88,14 +86,6 @@ func main() {
 	})
 	if err != nil {
 		setupLog.Error(err, "unable to start manager")
-		os.Exit(1)
-	}
-	if err = (&controllers.PodReconciler{
-		Client: mgr.GetClient(),
-		Log:    ctrl.Log.WithName("controllers").WithName("Pod"),
-		Scheme: mgr.GetScheme(),
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "Pod")
 		os.Exit(1)
 	}
 
@@ -185,15 +175,6 @@ func main() {
 		Log:    ctrl.Log.WithName("controllers").WithName("SecretRedeploy"),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "SecretRedeploy")
-		os.Exit(1)
-	}
-
-	if err = (&controllers.PodSweeperReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
-		Log:    ctrl.Log.WithName("controllers").WithName("PodSweeperController"),
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "PodSweeperController")
 		os.Exit(1)
 	}
 
