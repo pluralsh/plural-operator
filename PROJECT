@@ -11,42 +11,7 @@ resources:
   controller: true
   domain: plural.sh
   group: platform
-  kind: Dashboard
-  path: github.com/pluralsh/plural-operator/apis/platform/v1alpha1
-  version: v1alpha1
-- api:
-    crdVersion: v1
-    namespaced: true
-  controller: true
-  domain: plural.sh
-  group: platform
-  kind: LogFilter
-  path: github.com/pluralsh/plural-operator/apis/platform/v1alpha1
-  version: v1alpha1
-- api:
-    crdVersion: v1
-    namespaced: true
-  controller: true
-  domain: plural.sh
-  group: platform
-  kind: Proxy
-  path: github.com/pluralsh/plural-operator/apis/platform/v1alpha1
-  version: v1alpha1
-- api:
-    crdVersion: v1
-    namespaced: true
-  controller: true
-  domain: plural.sh
-  group: platform
   kind: SlashCommand
-  path: github.com/pluralsh/plural-operator/apis/platform/v1alpha1
-  version: v1alpha1
-- api:
-    crdVersion: v1
-    namespaced: true
-  domain: plural.sh
-  group: platform
-  kind: LogTail
   path: github.com/pluralsh/plural-operator/apis/platform/v1alpha1
   version: v1alpha1
 - api:
@@ -56,14 +21,6 @@ resources:
   domain: plural.sh
   group: platform
   kind: SecretSync
-  path: github.com/pluralsh/plural-operator/apis/platform/v1alpha1
-  version: v1alpha1
-- api:
-    crdVersion: v1
-    namespaced: true
-  domain: plural.sh
-  group: platform
-  kind: Runbook
   path: github.com/pluralsh/plural-operator/apis/platform/v1alpha1
   version: v1alpha1
 - api:
