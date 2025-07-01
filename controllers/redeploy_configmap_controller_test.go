@@ -100,7 +100,7 @@ func TestReconcileConfigMap(t *testing.T) {
 			ctx := context.Background()
 			target := ConfigMapRedeployReconciler{
 				Client: fakeClient,
-				Log:    ctrl.Log.WithName("controllers").WithName("RedeploySecretsController"),
+				Log:    ctrl.Log.WithName("controllers").WithName("ConfigMapRedeployReconciler"),
 				Scheme: scheme.Scheme,
 			}
 

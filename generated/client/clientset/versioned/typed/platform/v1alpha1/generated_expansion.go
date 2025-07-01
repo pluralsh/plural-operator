@@ -25,8 +25,6 @@ type RegistryCredentialExpansion interface{}
 
 type ResourceGroupExpansion interface{}
 
-type SecretSyncExpansion interface{}
-
 type SlashCommandExpansion interface{}
 
 type StatefulSetResizeExpansion interface{}

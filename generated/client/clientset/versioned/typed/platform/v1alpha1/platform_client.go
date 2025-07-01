@@ -31,7 +31,6 @@ type PlatformV1alpha1Interface interface {
 	DefaultStorageClassesGetter
 	RegistryCredentialsGetter
 	ResourceGroupsGetter
-	SecretSyncsGetter
 	SlashCommandsGetter
 	StatefulSetResizesGetter
 }
@@ -55,10 +54,6 @@ func (c *PlatformV1alpha1Client) RegistryCredentials(namespace string) RegistryC
 
 func (c *PlatformV1alpha1Client) ResourceGroups(namespace string) ResourceGroupInterface {
 	return newResourceGroups(c, namespace)
-}
-
-func (c *PlatformV1alpha1Client) SecretSyncs(namespace string) SecretSyncInterface {
-	return newSecretSyncs(c, namespace)
 }
 
 func (c *PlatformV1alpha1Client) SlashCommands(namespace string) SlashCommandInterface {

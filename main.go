@@ -89,30 +89,12 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err = (&controllers.SecretSyncReconciler{
-		Client: mgr.GetClient(),
-		Log:    ctrl.Log.WithName("controllers").WithName("SecretSync"),
-		Scheme: mgr.GetScheme(),
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "SecretSync")
-		os.Exit(1)
-	}
-
 	if err = (&controllers.JobReconciler{
 		Client: mgr.GetClient(),
 		Log:    ctrl.Log.WithName("controllers").WithName("Job"),
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Job")
-		os.Exit(1)
-	}
-
-	if err = (&controllers.SecretReconciler{
-		Client: mgr.GetClient(),
-		Log:    ctrl.Log.WithName("controllers").WithName("Secret"),
-		Scheme: mgr.GetScheme(),
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "Secret")
 		os.Exit(1)
 	}
 
@@ -150,14 +132,6 @@ func main() {
 		ConfigMapNamespace: os.Getenv("PLURAL_OAUTH_SIDECAR_CONFIG_NAMESPACE"),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "OauthConfigMapRedeploy")
-		os.Exit(1)
-	}
-	if err = (&controllers.RedeploySecretReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
-		Log:    ctrl.Log.WithName("controllers").WithName("SecretRedeploy"),
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "SecretRedeploy")
 		os.Exit(1)
 	}
 

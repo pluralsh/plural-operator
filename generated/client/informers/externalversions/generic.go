@@ -60,8 +60,6 @@ func (f *sharedInformerFactory) ForResource(resource schema.GroupVersionResource
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Platform().V1alpha1().RegistryCredentials().Informer()}, nil
 	case v1alpha1.SchemeGroupVersion.WithResource("resourcegroups"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Platform().V1alpha1().ResourceGroups().Informer()}, nil
-	case v1alpha1.SchemeGroupVersion.WithResource("secretsyncs"):
-		return &genericInformer{resource: resource.GroupResource(), informer: f.Platform().V1alpha1().SecretSyncs().Informer()}, nil
 	case v1alpha1.SchemeGroupVersion.WithResource("slashcommands"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Platform().V1alpha1().SlashCommands().Informer()}, nil
 	case v1alpha1.SchemeGroupVersion.WithResource("statefulsetresizes"):

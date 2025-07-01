@@ -49,14 +49,6 @@ type ResourceGroupListerExpansion interface{}
 // ResourceGroupNamespaceLister.
 type ResourceGroupNamespaceListerExpansion interface{}
 
-// SecretSyncListerExpansion allows custom methods to be added to
-// SecretSyncLister.
-type SecretSyncListerExpansion interface{}
-
-// SecretSyncNamespaceListerExpansion allows custom methods to be added to
-// SecretSyncNamespaceLister.
-type SecretSyncNamespaceListerExpansion interface{}
-
 // SlashCommandListerExpansion allows custom methods to be added to
 // SlashCommandLister.
 type SlashCommandListerExpansion interface{}

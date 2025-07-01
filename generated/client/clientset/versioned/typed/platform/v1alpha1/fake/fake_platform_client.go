@@ -43,10 +43,6 @@ func (c *FakePlatformV1alpha1) ResourceGroups(namespace string) v1alpha1.Resourc
 	return &FakeResourceGroups{c, namespace}
 }
 
-func (c *FakePlatformV1alpha1) SecretSyncs(namespace string) v1alpha1.SecretSyncInterface {
-	return &FakeSecretSyncs{c, namespace}
-}
-
 func (c *FakePlatformV1alpha1) SlashCommands(namespace string) v1alpha1.SlashCommandInterface {
 	return &FakeSlashCommands{c, namespace}
 }

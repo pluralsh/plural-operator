@@ -109,7 +109,7 @@ func TestReconcileRegistryCredential(t *testing.T) {
 			ctx := context.Background()
 			target := RegistryCredentialsReconciler{
 				Client: fakeClient,
-				Log:    ctrl.Log.WithName("controllers").WithName("RedeploySecretsController"),
+				Log:    ctrl.Log.WithName("controllers").WithName("RegistryCredentialsReconciler"),
 				Scheme: scheme.Scheme,
 			}
 

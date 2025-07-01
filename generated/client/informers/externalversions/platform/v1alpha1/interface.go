@@ -31,8 +31,6 @@ type Interface interface {
 	RegistryCredentials() RegistryCredentialInformer
 	// ResourceGroups returns a ResourceGroupInformer.
 	ResourceGroups() ResourceGroupInformer
-	// SecretSyncs returns a SecretSyncInformer.
-	SecretSyncs() SecretSyncInformer
 	// SlashCommands returns a SlashCommandInformer.
 	SlashCommands() SlashCommandInformer
 	// StatefulSetResizes returns a StatefulSetResizeInformer.
@@ -68,11 +66,6 @@ func (v *version) RegistryCredentials() RegistryCredentialInformer {
 // ResourceGroups returns a ResourceGroupInformer.
 func (v *version) ResourceGroups() ResourceGroupInformer {
 	return &resourceGroupInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
-}
-
-// SecretSyncs returns a SecretSyncInformer.
-func (v *version) SecretSyncs() SecretSyncInformer {
-	return &secretSyncInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }
 
 // SlashCommands returns a SlashCommandInformer.
