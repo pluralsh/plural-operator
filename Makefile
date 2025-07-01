@@ -61,7 +61,7 @@ unit-test:
 build: ## Build manager binary.
 	go build -o bin/manager main.go
 
-run: manifests generate fmt vet ## Run a controller from your host.
+run: manifests generate ## Run a controller from your host.
 	ENABLE_WEBHOOKS=false go run ./main.go -zap-devel -zap-log-level 2
 
 docker-build: build ## Build docker image with the manager.
