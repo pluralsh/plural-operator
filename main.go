@@ -110,15 +110,6 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err = (&controllers.ServiceAccountReconciler{
-		Client: mgr.GetClient(),
-		Log:    ctrl.Log.WithName("controllers").WithName("ServiceAccount"),
-		Scheme: mgr.GetScheme(),
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "ServiceAccount")
-		os.Exit(1)
-	}
-
 	if err = (&controllers.JobReconciler{
 		Client: mgr.GetClient(),
 		Log:    ctrl.Log.WithName("controllers").WithName("Job"),
