@@ -25,14 +25,6 @@ type ConfigurationOverlayListerExpansion interface{}
 // ConfigurationOverlayNamespaceLister.
 type ConfigurationOverlayNamespaceListerExpansion interface{}
 
-// DashboardListerExpansion allows custom methods to be added to
-// DashboardLister.
-type DashboardListerExpansion interface{}
-
-// DashboardNamespaceListerExpansion allows custom methods to be added to
-// DashboardNamespaceLister.
-type DashboardNamespaceListerExpansion interface{}
-
 // DefaultStorageClassListerExpansion allows custom methods to be added to
 // DefaultStorageClassLister.
 type DefaultStorageClassListerExpansion interface{}
@@ -49,30 +41,6 @@ type LicenseListerExpansion interface{}
 // LicenseNamespaceLister.
 type LicenseNamespaceListerExpansion interface{}
 
-// LogFilterListerExpansion allows custom methods to be added to
-// LogFilterLister.
-type LogFilterListerExpansion interface{}
-
-// LogFilterNamespaceListerExpansion allows custom methods to be added to
-// LogFilterNamespaceLister.
-type LogFilterNamespaceListerExpansion interface{}
-
-// LogTailListerExpansion allows custom methods to be added to
-// LogTailLister.
-type LogTailListerExpansion interface{}
-
-// LogTailNamespaceListerExpansion allows custom methods to be added to
-// LogTailNamespaceLister.
-type LogTailNamespaceListerExpansion interface{}
-
-// ProxyListerExpansion allows custom methods to be added to
-// ProxyLister.
-type ProxyListerExpansion interface{}
-
-// ProxyNamespaceListerExpansion allows custom methods to be added to
-// ProxyNamespaceLister.
-type ProxyNamespaceListerExpansion interface{}
-
 // RegistryCredentialListerExpansion allows custom methods to be added to
 // RegistryCredentialLister.
 type RegistryCredentialListerExpansion interface{}
@@ -88,14 +56,6 @@ type ResourceGroupListerExpansion interface{}
 // ResourceGroupNamespaceListerExpansion allows custom methods to be added to
 // ResourceGroupNamespaceLister.
 type ResourceGroupNamespaceListerExpansion interface{}
-
-// RunbookListerExpansion allows custom methods to be added to
-// RunbookLister.
-type RunbookListerExpansion interface{}
-
-// RunbookNamespaceListerExpansion allows custom methods to be added to
-// RunbookNamespaceLister.
-type RunbookNamespaceListerExpansion interface{}
 
 // SecretSyncListerExpansion allows custom methods to be added to
 // SecretSyncLister.

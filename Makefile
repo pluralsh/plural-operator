@@ -85,7 +85,7 @@ run-client-gen: client-gen
 	$(CLIENT_GEN) -h=hack/boilerplate.go.txt -n=versioned -o=. -p=github.com/pluralsh/plural-operator/generated/client/clientset --input=platform/v1alpha1,vpn/v1alpha1 --input-base=github.com/pluralsh/plural-operator/apis --trim-path-prefix=github.com/pluralsh/plural-operator
 
 run-lister-gen: lister-gen
-	$(LISTER_GEN) --input-dirs github.com/pluralsh/plural-operator/apis/platform/v1alpha1,github.com/pluralsh/plural-operator/apis/vpn/v1alpha1 --output-package github.com/pluralsh/plural-operator/generated/client/listers --go-header-file hack/boilerplate.go.txt
+	$(LISTER_GEN) -h=hack/boilerplate.go.txt -o=. --trim-path-prefix=github.com/pluralsh/plural-operator --input-dirs=github.com/pluralsh/plural-operator/apis/platform/v1alpha1,github.com/pluralsh/plural-operator/apis/vpn/v1alpha1 -p=github.com/pluralsh/plural-operator/generated/client/listers
 
 run-informer-gen: informer-gen
 	$(INFORMER_GEN) --input-dirs github.com/pluralsh/plural-operator/apis/platform/v1alpha1,github.com/pluralsh/plural-operator/apis/vpn/v1alpha1  --versioned-clientset-package github.com/pluralsh/plural-operator/generated/client/clientset/versioned --listers-package github.com/pluralsh/plural-operator/generated/client/listers --output-package github.com/pluralsh/plural-operator/generated/client/informers --go-header-file hack/boilerplate.go.txt
