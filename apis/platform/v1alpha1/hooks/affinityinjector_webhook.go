@@ -36,7 +36,7 @@ type AffinityInjector struct {
 	client.Client
 	Name    string
 	Log     logr.Logger
-	decoder *admission.Decoder
+	decoder admission.Decoder
 }
 
 const (
@@ -122,7 +122,7 @@ func (ai *AffinityInjector) Handle(ctx context.Context, req admission.Request) a
 // AffinityInjector implements admission.DecoderInjector.
 // A decoder will be automatically injected.
 // InjectDecoder injects the decoder.
-func (ai *AffinityInjector) InjectDecoder(d *admission.Decoder) error {
+func (ai *AffinityInjector) InjectDecoder(d admission.Decoder) error {
 	ai.decoder = d
 	return nil
 }

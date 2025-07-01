@@ -40,7 +40,7 @@ type OAuthInjector struct {
 	Name               string
 	Client             client.Client
 	Log                logr.Logger
-	decoder            *admission.Decoder
+	decoder            admission.Decoder
 	ConfigMapName      string
 	ConfigMapNamespace string
 }
@@ -155,7 +155,7 @@ func (oi *OAuthInjector) Handle(ctx context.Context, req admission.Request) admi
 // OidcInjector implements admission.DecoderInjector.
 // A decoder will be automatically inj1ected.
 // InjectDecoder injects the decoder.
-func (oi *OAuthInjector) InjectDecoder(d *admission.Decoder) error {
+func (oi *OAuthInjector) InjectDecoder(d admission.Decoder) error {
 	oi.decoder = d
 	return nil
 }
