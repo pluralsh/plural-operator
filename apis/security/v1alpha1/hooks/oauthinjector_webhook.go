@@ -87,7 +87,7 @@ func (oi *OAuthInjector) Handle(ctx context.Context, req admission.Request) admi
 	factory := informers.NewSharedInformerFactoryWithOptions(kubeClient, time.Minute, informers.WithNamespace(oi.ConfigMapNamespace))
 	configmapInformer := factory.Core().V1().ConfigMaps().Informer()
 
-	configmapInformer.AddEventHandler(cache.FilteringResourceEventHandler{
+	_, _ = configmapInformer.AddEventHandler(cache.FilteringResourceEventHandler{
 		FilterFunc: func(obj interface{}) bool {
 			if configmap, ok := obj.(*corev1.ConfigMap); ok {
 				return configmap.Name == oi.ConfigMapName
