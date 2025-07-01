@@ -15,7 +15,6 @@ RUN go mod download
 COPY main.go main.go
 COPY apis/ apis/
 COPY controllers/ controllers/
-COPY alertmanager/ alertmanager/
 COPY resources/ resources/
 COPY services/ services/
 
