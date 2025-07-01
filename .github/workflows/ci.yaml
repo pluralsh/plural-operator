@@ -11,19 +11,20 @@ jobs:
     name: Build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-go@v3
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
         with:
-          go-version: 1.18
+          go-version-file: go.mod
+          cache: true
       - run: make build
   image:
     name: Build image
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: docker/setup-qemu-action@v2
-      - uses: docker/setup-buildx-action@v2
-      - uses: docker/build-push-action@v3
+      - uses: actions/checkout@v4
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/build-push-action@v6
         with:
           context: "."
           file: "./Dockerfile"
@@ -33,19 +34,21 @@ jobs:
     name: Unit test
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-go@v3
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
         with:
-          go-version: 1.18
+          go-version-file: go.mod
+          cache: true
       - run: make unit-test
    lint:
      name: Lint
      runs-on: ubuntu-latest
      steps:
-       - uses: actions/checkout@v3
-       - uses: actions/setup-go@v3
+       - uses: actions/checkout@v4
+       - uses: actions/setup-go@v5
          with:
-           go-version: 1.18
+           go-version-file: go.mod
+           cache: true
        - name: golangci-lint
          uses: golangci/golangci-lint-action@v3
          with:
