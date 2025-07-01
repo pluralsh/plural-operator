@@ -39,14 +39,16 @@ manifests: controller-gen ## Generate WebhookConfiguration, ClusterRole and Cust
 generate: controller-gen generate-client ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations and the clientset, informers and listers.
 	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./apis/..."
 
-fmt: ## Run go fmt against code.
-	go fmt ./...
+.PHONY: lint
+lint: golangci-lint ## run linters
+	$(GOLANGCI_LINT) run ./...
 
-vet: ## Run go vet against code.
-	go vet ./...
+.PHONY: fix
+fix: golangci-lint ## fix issues found by linters
+	$(GOLANGCI_LINT) run --fix ./...
 
 ENVTEST_ASSETS_DIR=$(shell pwd)/testbin
-test: manifests generate fmt vet ## Run tests.
+test: manifests generate ## Run tests.
 	mkdir -p ${ENVTEST_ASSETS_DIR}
 	test -f ${ENVTEST_ASSETS_DIR}/setup-envtest.sh || curl -sSLo ${ENVTEST_ASSETS_DIR}/setup-envtest.sh https://raw.githubusercontent.com/kubernetes-sigs/controller-runtime/v0.7.2/hack/setup-envtest.sh
 	source ${ENVTEST_ASSETS_DIR}/setup-envtest.sh; fetch_envtest_tools $(ENVTEST_ASSETS_DIR); setup_envtest_env $(ENVTEST_ASSETS_DIR); go test ./... -coverprofile cover.out
@@ -116,6 +118,10 @@ lister-gen: ## Download lister-gen locally if necessary.
 INFORMER_GEN = $(shell pwd)/bin/informer-gen
 informer-gen: ## Download informer-gen locally if necessary.
 	$(call go-get-tool,$(INFORMER_GEN),k8s.io/code-generator/cmd/informer-gen@v0.25.3)
+
+GOLANGCI_LINT = $(shell pwd)/bin/golangci-lint
+golangci-lint: ## Download golangci-lint locally if necessary.
+	$(call go-get-tool,$(GOLANGCI_LINT),github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.1.2)
 
 # go-get-tool will 'go get' any package $2 and install it to $1.
 PROJECT_DIR := $(shell dirname $(abspath $(lastword $(MAKEFILE_LIST))))
