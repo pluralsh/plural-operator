@@ -37,7 +37,7 @@ manifests: controller-gen ## Generate WebhookConfiguration, ClusterRole and Cust
 	$(CONTROLLER_GEN) $(CRD_OPTIONS) rbac:roleName=manager-role webhook paths="./apis/..." output:crd:artifacts:config=config/crd/bases
 
 generate: controller-gen generate-client ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations and the clientset, informers and listers.
-	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./apis/..."
+	$(CONTROLLER_GEN) object:headerFile=boilerplate.go.txt paths=./apis/...
 
 .PHONY: lint
 lint: golangci-lint ## run linters
@@ -47,13 +47,7 @@ lint: golangci-lint ## run linters
 fix: golangci-lint ## fix issues found by linters
 	$(GOLANGCI_LINT) run --fix ./...
 
-ENVTEST_ASSETS_DIR=$(shell pwd)/testbin
-test: manifests generate ## Run tests.
-	mkdir -p ${ENVTEST_ASSETS_DIR}
-	test -f ${ENVTEST_ASSETS_DIR}/setup-envtest.sh || curl -sSLo ${ENVTEST_ASSETS_DIR}/setup-envtest.sh https://raw.githubusercontent.com/kubernetes-sigs/controller-runtime/v0.7.2/hack/setup-envtest.sh
-	source ${ENVTEST_ASSETS_DIR}/setup-envtest.sh; fetch_envtest_tools $(ENVTEST_ASSETS_DIR); setup_envtest_env $(ENVTEST_ASSETS_DIR); go test ./... -coverprofile cover.out
-
-unit-test:
+test:
 	go test -tags=unit -v -race ./controllers/...
 
 ##@ Build
@@ -86,13 +80,13 @@ undeploy: ## Undeploy controller from the K8s cluster specified in ~/.kube/confi
 	$(KUSTOMIZE) build config/default | kubectl delete -f -
 
 run-client-gen: client-gen
-	$(CLIENT_GEN) -h=hack/boilerplate.go.txt -n=versioned -o=. -p=github.com/pluralsh/plural-operator/generated/client/clientset --input=platform/v1alpha1 --input-base=github.com/pluralsh/plural-operator/apis --trim-path-prefix=github.com/pluralsh/plural-operator
+	$(CLIENT_GEN) -h=boilerplate.go.txt -n=versioned -o=. -p=github.com/pluralsh/plural-operator/generated/client/clientset --input=platform/v1alpha1 --input-base=github.com/pluralsh/plural-operator/apis --trim-path-prefix=github.com/pluralsh/plural-operator
 
 run-lister-gen: lister-gen
-	$(LISTER_GEN) -h=hack/boilerplate.go.txt -o=. --trim-path-prefix=github.com/pluralsh/plural-operator --input-dirs=github.com/pluralsh/plural-operator/apis/platform/v1alpha1 -p=github.com/pluralsh/plural-operator/generated/client/listers
+	$(LISTER_GEN) -h=boilerplate.go.txt -o=. --trim-path-prefix=github.com/pluralsh/plural-operator --input-dirs=github.com/pluralsh/plural-operator/apis/platform/v1alpha1 -p=github.com/pluralsh/plural-operator/generated/client/listers
 
 run-informer-gen: informer-gen
-	$(INFORMER_GEN) -h=hack/boilerplate.go.txt -o=. --trim-path-prefix=github.com/pluralsh/plural-operator --input-dirs github.com/pluralsh/plural-operator/apis/platform/v1alpha1 --versioned-clientset-package github.com/pluralsh/plural-operator/generated/client/clientset/versioned --listers-package github.com/pluralsh/plural-operator/generated/client/listers --output-package github.com/pluralsh/plural-operator/generated/client/informers
+	$(INFORMER_GEN) -h=boilerplate.go.txt -o=. --trim-path-prefix=github.com/pluralsh/plural-operator --input-dirs github.com/pluralsh/plural-operator/apis/platform/v1alpha1 --versioned-clientset-package github.com/pluralsh/plural-operator/generated/client/clientset/versioned --listers-package github.com/pluralsh/plural-operator/generated/client/listers --output-package github.com/pluralsh/plural-operator/generated/client/informers
 
 clean-codegen:
 	rm -rf generated
