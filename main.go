@@ -33,7 +33,6 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	"github.com/pluralsh/plural-operator/alertmanager"
 	platformv1alpha1 "github.com/pluralsh/plural-operator/apis/platform/v1alpha1"
 	vpnv1alpha1 "github.com/pluralsh/plural-operator/apis/vpn/v1alpha1"
 	amv1alpha1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1alpha1"
@@ -211,22 +210,6 @@ func main() {
 
 	// add webhook handler for alertmanager
 	ctx := ctrl.SetupSignalHandler()
-
-	amr := &alertmanager.AlertmanagerReconciler{
-		Client: mgr.GetClient(),
-		Log:    ctrl.Log.WithName("controllers").WithName("Alertmanager"),
-		Scheme: mgr.GetScheme(),
-	}
-
-	if err := amr.SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "alertmanager")
-		os.Exit(1)
-	}
-
-	if err := mgr.AddMetricsExtraHandler("/webhook", alertmanager.AlertmanagerHandler(ctx, amr)); err != nil {
-		setupLog.Error(err, "unable to set up alertmanager webhook")
-		os.Exit(1)
-	}
 
 	// Setup oauth injector mutating webhook
 	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
