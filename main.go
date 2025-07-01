@@ -42,7 +42,6 @@ import (
 
 	platformhooks "github.com/pluralsh/plural-operator/apis/platform/v1alpha1/hooks"
 	securityhooks "github.com/pluralsh/plural-operator/apis/security/v1alpha1/hooks"
-	vpncontrollers "github.com/pluralsh/plural-operator/controllers/vpn"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -199,23 +198,6 @@ func main() {
 		os.Exit(1)
 	}
 
-	if err = (&vpncontrollers.WireguardServerReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
-		Log:    ctrl.Log.WithName("controllers").WithName("WireguardServer"),
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "WireguardServer")
-		os.Exit(1)
-	}
-
-	if err = (&vpncontrollers.WireguardPeerReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
-		Log:    ctrl.Log.WithName("controllers").WithName("WireguardPeer"),
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "WireguardPeer")
-		os.Exit(1)
-	}
 	// //+kubebuilder:scaffold:builder
 
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
