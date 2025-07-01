@@ -22,7 +22,6 @@ import (
 	"github.com/go-logr/logr"
 	storagev1 "k8s.io/api/storage/v1"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
-	apierrs "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
@@ -77,7 +76,7 @@ func (r *DefaultStorageClassReconciler) Reconcile(ctx context.Context, req ctrl.
 	storageClass := r.generateStorageClass(defaultstorageInstance)
 	// Don't continue if the storage class does not exist. Without this check resources.StorageClass would create the storage class
 	if err := r.Get(ctx, types.NamespacedName{Name: defaultstorageInstance.Spec.Name}, &foundStorageClass); err != nil {
-		if apierrs.IsNotFound(err) {
+		if apierrors.IsNotFound(err) {
 			log.Info("storage class does not exist", "class", defaultstorageInstance.Spec.Name)
 			return ctrl.Result{}, nil
 		}

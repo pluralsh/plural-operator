@@ -46,6 +46,7 @@ type SecretReconciler struct {
 const (
 	secretSyncLabel      = "platform.plural.sh/sync"
 	namespaceBucketLabel = "platform.plural.sh/sync-target"
+	allBuckets           = "all"
 )
 
 //+kubebuilder:rbac:groups="",resources=namespaces,verbs=get;list
@@ -81,9 +82,9 @@ func (r *SecretReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 	}
 
 	listOpts := &client.ListOptions{}
-	if bucket == "all" {
+	if bucket == allBuckets {
 		match := client.MatchingLabels{}
-		match[managedLabel] = "plural"
+		match[managedLabel] = managedByPlural
 		match.ApplyToList(listOpts)
 	} else {
 		hasLabels := client.HasLabels{namespaceBucketLabel}
@@ -105,7 +106,7 @@ func (r *SecretReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctr
 		val := ns.Labels[namespaceBucketLabel]
 		buckets := strings.Split(val, ",")
 		for _, b := range buckets {
-			if b == bucket || bucket == "all" {
+			if b == bucket || bucket == allBuckets {
 				log.Info("Syncing to namespace", "namespace", ns.Name)
 				if err := r.syncSecret(ctx, &secret, &ns); err != nil {
 					return ctrl.Result{}, err
@@ -177,12 +178,12 @@ func (r *SecretReconciler) listEffectedSecretsForNamespace(object client.Object)
 		return results
 	}
 
-	if res, ok := ns.Labels[managedLabel]; !ok || res != "plural" {
+	if res, ok := ns.Labels[managedLabel]; !ok || res != managedByPlural {
 		log.Info("namespace not managed by plural")
 		return results
 	}
 
-	val, _ := ns.Labels[namespaceBucketLabel]
+	val := ns.Labels[namespaceBucketLabel]
 	buckets := strings.Split(val, ",")
 	secrets := &corev1.SecretList{}
 	if err := r.List(ctx, secrets, client.HasLabels{secretSyncLabel}); err != nil {
@@ -192,8 +193,8 @@ func (r *SecretReconciler) listEffectedSecretsForNamespace(object client.Object)
 	log.Info(fmt.Sprintf("Found %d secrets to potentially sync", len(secrets.Items)))
 
 	for _, secret := range secrets.Items {
-		bucket, _ := secret.Labels[secretSyncLabel]
-		if bucket == "all" {
+		bucket := secret.Labels[secretSyncLabel]
+		if bucket == allBuckets {
 			log.Info("Adding secret to update queue", "name", secret.Name, "namespace", secret.Namespace)
 			results = append(results, reconcile.Request{
 				NamespacedName: client.ObjectKeyFromObject(&secret),

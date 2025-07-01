@@ -133,7 +133,7 @@ func (r *StatefulSetResizeReconciler) Reconcile(ctx context.Context, req ctrl.Re
 		}
 
 		if !found {
-			err := fmt.Errorf("Could not find default storage class")
+			err := fmt.Errorf("could not find default storage class")
 			log.Error(err, "could not find default storage class")
 			return ctrl.Result{}, err
 		}

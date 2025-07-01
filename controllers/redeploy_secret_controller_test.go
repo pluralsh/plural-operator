@@ -32,7 +32,6 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
@@ -47,14 +46,14 @@ func TestReconcileSecret(t *testing.T) {
 		secretName            string
 		secretNamespace       string
 		expectedPods          []string
-		existingObjects       []ctrlruntimeclient.Object
+		existingObjects       []client.Object
 		expectedSHAAnnotation bool
 	}{
 		{
 			name:            "scenario 1: no matching pods",
 			secretNamespace: "test",
 			secretName:      "testsecret",
-			existingObjects: []ctrlruntimeclient.Object{
+			existingObjects: []client.Object{
 				&corev1.Secret{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "testsecret",
@@ -71,7 +70,7 @@ func TestReconcileSecret(t *testing.T) {
 			name:            "scenario 2: two matching pods, delete those pods",
 			secretNamespace: "test",
 			secretName:      "testsecret",
-			existingObjects: []ctrlruntimeclient.Object{
+			existingObjects: []client.Object{
 				&corev1.Secret{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "testsecret",

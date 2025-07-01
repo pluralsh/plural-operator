@@ -31,7 +31,6 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
@@ -46,12 +45,12 @@ func TestReconcileRegistryCredential(t *testing.T) {
 		registryCred    *v1alpha1.RegistryCredential
 		expectedAuths   string
 		expectedError   string
-		existingObjects []ctrlruntimeclient.Object
+		existingObjects []client.Object
 	}{
 		{
 			name:         "scenario 1: create new secret with credentials",
 			registryCred: genRegistryCred("cred", "test", "secret", "password", "test", "test@plural.sh", "dkr.plural.sh"),
-			existingObjects: []ctrlruntimeclient.Object{
+			existingObjects: []client.Object{
 				&corev1.Secret{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "secret",
@@ -66,7 +65,7 @@ func TestReconcileRegistryCredential(t *testing.T) {
 		{
 			name:         "scenario 2: update registry credentials",
 			registryCred: genRegistryCred("cred", "test", "secret", "password", "test", "test@plural.sh", "dkr.plural.sh"),
-			existingObjects: []ctrlruntimeclient.Object{
+			existingObjects: []client.Object{
 				&corev1.Secret{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "secret",
@@ -90,7 +89,7 @@ func TestReconcileRegistryCredential(t *testing.T) {
 		{
 			name:         "scenario 3: password secret doesn't exist",
 			registryCred: genRegistryCred("cred", "test", "secret", "password", "test", "test@plural.sh", "dkr.plural.sh"),
-			existingObjects: []ctrlruntimeclient.Object{
+			existingObjects: []client.Object{
 				genRegistryCred("cred", "test", "secret", "password", "test", "test@plural.sh", "dkr.plural.sh"),
 			},
 			expectedError: "secrets \"secret\" not found",
@@ -129,7 +128,6 @@ func TestReconcileRegistryCredential(t *testing.T) {
 				currentAuths, _ := base64.StdEncoding.DecodeString(string(auths))
 				assert.Equal(t, test.expectedAuths, string(currentAuths))
 			}
-
 		})
 	}
 }

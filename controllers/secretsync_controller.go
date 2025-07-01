@@ -45,11 +45,8 @@ type SecretSyncReconciler struct {
 }
 
 var (
-	secretOwnerKey    = ".metadata.controller"
-	apiGVStr          = platformv1alpha1.GroupVersion.String()
-	ownedAnnotation   = "platform.plural.sh/owned"
-	ownerAnnotation   = "platform.plural.sh/owner"
-	allowedAnnotation = "platform.plural.sh/syncable"
+	ownedAnnotation = "platform.plural.sh/owned"
+	ownerAnnotation = "platform.plural.sh/owner"
 )
 
 //+kubebuilder:rbac:groups=platform.plural.sh,resources=secretsyncs,verbs=get;list;watch;create;update;patch;delete
@@ -95,7 +92,7 @@ func (r *SecretSyncReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 	// }
 
 	meta := secret.ObjectMeta
-	log.Info(fmt.Sprintf("Attempting to apply secret %s/%s", req.NamespacedName.Namespace, meta.Name))
+	log.Info(fmt.Sprintf("Attempting to apply secret %s/%s", req.Namespace, meta.Name))
 	if secret.Annotations == nil {
 		secret.Annotations = map[string]string{}
 	}
@@ -114,7 +111,7 @@ func (r *SecretSyncReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 			"kind":       "Secret",
 			"metadata": map[string]interface{}{
 				"name":        meta.Name,
-				"namespace":   req.NamespacedName.Namespace,
+				"namespace":   req.Namespace,
 				"labels":      secret.Labels,
 				"annotations": annotations,
 			},
@@ -122,14 +119,14 @@ func (r *SecretSyncReconciler) Reconcile(ctx context.Context, req ctrl.Request) 
 		},
 	}
 	if err := r.Patch(ctx, newSecret, client.Apply, client.ForceOwnership, client.FieldOwner("plural-operator")); err != nil {
-		log.Error(err, fmt.Sprintf("failed to sync object to namespace %s", sync.ObjectMeta.Namespace))
+		log.Error(err, fmt.Sprintf("failed to sync object to namespace %s", sync.Namespace))
 		return ctrl.Result{}, err
 	}
 
 	secret.Annotations[ownedAnnotation] = "true"
-	secret.Annotations[ownerAnnotation] = fmt.Sprintf("%s/%s", req.NamespacedName.Namespace, req.NamespacedName.Name)
+	secret.Annotations[ownerAnnotation] = fmt.Sprintf("%s/%s", req.Namespace, req.Name)
 	if err := r.Update(ctx, &secret); err != nil {
-		log.Error(err, fmt.Sprintf("Failed to add ownership labels to secret: %s/%s", secret.ObjectMeta.Namespace, secret.ObjectMeta.Name))
+		log.Error(err, fmt.Sprintf("Failed to add ownership labels to secret: %s/%s", secret.Namespace, secret.Name))
 		return ctrl.Result{}, err
 	}
 

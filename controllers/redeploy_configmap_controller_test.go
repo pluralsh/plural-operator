@@ -32,10 +32,11 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	ctrlruntimeclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/client/fake"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
 )
+
+const redeployLabelTrue = "true"
 
 func init() {
 	utilruntime.Must(v1alpha1.AddToScheme(scheme.Scheme))
@@ -47,13 +48,13 @@ func TestReconcileConfigMap(t *testing.T) {
 		secretName      string
 		secretNamespace string
 		expectedPods    []string
-		existingObjects []ctrlruntimeclient.Object
+		existingObjects []client.Object
 	}{
 		{
 			name:            "scenario 1: no matching pods",
 			secretNamespace: "test",
 			secretName:      "testconfig",
-			existingObjects: []ctrlruntimeclient.Object{
+			existingObjects: []client.Object{
 				&corev1.ConfigMap{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "testconfig",
@@ -69,7 +70,7 @@ func TestReconcileConfigMap(t *testing.T) {
 			name:            "scenario 2: two matching pods, delete those pods",
 			secretNamespace: "test",
 			secretName:      "testconfig",
-			existingObjects: []ctrlruntimeclient.Object{
+			existingObjects: []client.Object{
 				&corev1.ConfigMap{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "testconfig",
@@ -135,7 +136,7 @@ func genPod(podName, podNamespace string, setRedeployLabel bool) *corev1.Pod {
 		},
 	}
 	if setRedeployLabel {
-		pod.Labels[redeployment.RedeployLabel] = "true"
+		pod.Labels[redeployment.RedeployLabel] = redeployLabelTrue
 	}
 	return pod
 }

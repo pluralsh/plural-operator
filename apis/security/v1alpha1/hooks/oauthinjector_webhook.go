@@ -55,7 +55,7 @@ const (
 
 // OidcInjector adds an OAuth2-Proxy sidecar to every incoming pods.
 func (oi *OAuthInjector) Handle(ctx context.Context, req admission.Request) admission.Response {
-	log := oi.Log.WithValues("webhook", req.AdmissionRequest.Name)
+	log := oi.Log.WithValues("webhook", req.Name)
 	pod := &corev1.Pod{}
 
 	err := oi.decoder.Decode(req, pod)

@@ -46,7 +46,7 @@ const (
 
 // AffinityInjector adds configured node affinities to a pod
 func (ai *AffinityInjector) Handle(ctx context.Context, req admission.Request) admission.Response {
-	log := ai.Log.WithValues("webhook", req.AdmissionRequest.Name)
+	log := ai.Log.WithValues("webhook", req.Name)
 	pod := &corev1.Pod{}
 
 	err := ai.decoder.Decode(req, pod)
@@ -57,14 +57,14 @@ func (ai *AffinityInjector) Handle(ctx context.Context, req admission.Request) a
 
 	log.Info("Injecting affinity rules...")
 
-	groupstr, _ := pod.Labels[groupLabel]
+	groupstr := pod.Labels[groupLabel]
 	relevantGroup := map[string]bool{}
 	for _, group := range strings.Split(groupstr, ",") {
 		relevantGroup[group] = true
 	}
 
 	var rgs platformv1alpha1.ResourceGroupList
-	if err := ai.Client.List(ctx, &rgs); err != nil {
+	if err := ai.List(ctx, &rgs); err != nil {
 		log.Error(err, "Failed to list resource groups")
 		return admission.Errored(http.StatusInternalServerError, err)
 	}

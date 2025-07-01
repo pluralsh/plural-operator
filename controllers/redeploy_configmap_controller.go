@@ -46,7 +46,7 @@ func (c *ConfigMapRedeployReconciler) Reconcile(ctx context.Context, req ctrl.Re
 	log := c.Log.WithValues("reconcile", req.NamespacedName)
 
 	configMap := &corev1.ConfigMap{}
-	if err := c.Client.Get(ctx, req.NamespacedName, configMap); err != nil {
+	if err := c.Get(ctx, req.NamespacedName, configMap); err != nil {
 		if apierrors.IsNotFound(err) {
 			return ctrl.Result{}, nil
 		}
