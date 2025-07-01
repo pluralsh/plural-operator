@@ -25,24 +25,14 @@ import (
 type Interface interface {
 	// ConfigurationOverlays returns a ConfigurationOverlayInformer.
 	ConfigurationOverlays() ConfigurationOverlayInformer
-	// Dashboards returns a DashboardInformer.
-	Dashboards() DashboardInformer
 	// DefaultStorageClasses returns a DefaultStorageClassInformer.
 	DefaultStorageClasses() DefaultStorageClassInformer
 	// Licenses returns a LicenseInformer.
 	Licenses() LicenseInformer
-	// LogFilters returns a LogFilterInformer.
-	LogFilters() LogFilterInformer
-	// LogTails returns a LogTailInformer.
-	LogTails() LogTailInformer
-	// Proxies returns a ProxyInformer.
-	Proxies() ProxyInformer
 	// RegistryCredentials returns a RegistryCredentialInformer.
 	RegistryCredentials() RegistryCredentialInformer
 	// ResourceGroups returns a ResourceGroupInformer.
 	ResourceGroups() ResourceGroupInformer
-	// Runbooks returns a RunbookInformer.
-	Runbooks() RunbookInformer
 	// SecretSyncs returns a SecretSyncInformer.
 	SecretSyncs() SecretSyncInformer
 	// SlashCommands returns a SlashCommandInformer.
@@ -67,11 +57,6 @@ func (v *version) ConfigurationOverlays() ConfigurationOverlayInformer {
 	return &configurationOverlayInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }
 
-// Dashboards returns a DashboardInformer.
-func (v *version) Dashboards() DashboardInformer {
-	return &dashboardInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
-}
-
 // DefaultStorageClasses returns a DefaultStorageClassInformer.
 func (v *version) DefaultStorageClasses() DefaultStorageClassInformer {
 	return &defaultStorageClassInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
@@ -82,21 +67,6 @@ func (v *version) Licenses() LicenseInformer {
 	return &licenseInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }
 
-// LogFilters returns a LogFilterInformer.
-func (v *version) LogFilters() LogFilterInformer {
-	return &logFilterInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
-}
-
-// LogTails returns a LogTailInformer.
-func (v *version) LogTails() LogTailInformer {
-	return &logTailInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
-}
-
-// Proxies returns a ProxyInformer.
-func (v *version) Proxies() ProxyInformer {
-	return &proxyInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
-}
-
 // RegistryCredentials returns a RegistryCredentialInformer.
 func (v *version) RegistryCredentials() RegistryCredentialInformer {
 	return &registryCredentialInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
@@ -105,11 +75,6 @@ func (v *version) RegistryCredentials() RegistryCredentialInformer {
 // ResourceGroups returns a ResourceGroupInformer.
 func (v *version) ResourceGroups() ResourceGroupInformer {
 	return &resourceGroupInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
-}
-
-// Runbooks returns a RunbookInformer.
-func (v *version) Runbooks() RunbookInformer {
-	return &runbookInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }
 
 // SecretSyncs returns a SecretSyncInformer.

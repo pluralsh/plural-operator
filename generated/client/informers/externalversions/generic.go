@@ -21,7 +21,6 @@ import (
 	"fmt"
 
 	v1alpha1 "github.com/pluralsh/plural-operator/apis/platform/v1alpha1"
-	vpnv1alpha1 "github.com/pluralsh/plural-operator/apis/vpn/v1alpha1"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"
 	cache "k8s.io/client-go/tools/cache"
 )
@@ -55,36 +54,20 @@ func (f *sharedInformerFactory) ForResource(resource schema.GroupVersionResource
 	// Group=platform.plural.sh, Version=v1alpha1
 	case v1alpha1.SchemeGroupVersion.WithResource("configurationoverlays"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Platform().V1alpha1().ConfigurationOverlays().Informer()}, nil
-	case v1alpha1.SchemeGroupVersion.WithResource("dashboards"):
-		return &genericInformer{resource: resource.GroupResource(), informer: f.Platform().V1alpha1().Dashboards().Informer()}, nil
 	case v1alpha1.SchemeGroupVersion.WithResource("defaultstorageclasses"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Platform().V1alpha1().DefaultStorageClasses().Informer()}, nil
 	case v1alpha1.SchemeGroupVersion.WithResource("licenses"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Platform().V1alpha1().Licenses().Informer()}, nil
-	case v1alpha1.SchemeGroupVersion.WithResource("logfilters"):
-		return &genericInformer{resource: resource.GroupResource(), informer: f.Platform().V1alpha1().LogFilters().Informer()}, nil
-	case v1alpha1.SchemeGroupVersion.WithResource("logtails"):
-		return &genericInformer{resource: resource.GroupResource(), informer: f.Platform().V1alpha1().LogTails().Informer()}, nil
-	case v1alpha1.SchemeGroupVersion.WithResource("proxies"):
-		return &genericInformer{resource: resource.GroupResource(), informer: f.Platform().V1alpha1().Proxies().Informer()}, nil
 	case v1alpha1.SchemeGroupVersion.WithResource("registrycredentials"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Platform().V1alpha1().RegistryCredentials().Informer()}, nil
 	case v1alpha1.SchemeGroupVersion.WithResource("resourcegroups"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Platform().V1alpha1().ResourceGroups().Informer()}, nil
-	case v1alpha1.SchemeGroupVersion.WithResource("runbooks"):
-		return &genericInformer{resource: resource.GroupResource(), informer: f.Platform().V1alpha1().Runbooks().Informer()}, nil
 	case v1alpha1.SchemeGroupVersion.WithResource("secretsyncs"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Platform().V1alpha1().SecretSyncs().Informer()}, nil
 	case v1alpha1.SchemeGroupVersion.WithResource("slashcommands"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Platform().V1alpha1().SlashCommands().Informer()}, nil
 	case v1alpha1.SchemeGroupVersion.WithResource("statefulsetresizes"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Platform().V1alpha1().StatefulSetResizes().Informer()}, nil
-
-		// Group=vpn.plural.sh, Version=v1alpha1
-	case vpnv1alpha1.SchemeGroupVersion.WithResource("wireguardpeers"):
-		return &genericInformer{resource: resource.GroupResource(), informer: f.Vpn().V1alpha1().WireguardPeers().Informer()}, nil
-	case vpnv1alpha1.SchemeGroupVersion.WithResource("wireguardservers"):
-		return &genericInformer{resource: resource.GroupResource(), informer: f.Vpn().V1alpha1().WireguardServers().Informer()}, nil
 
 	}
 
