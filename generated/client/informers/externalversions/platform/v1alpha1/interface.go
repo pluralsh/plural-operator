@@ -27,8 +27,6 @@ type Interface interface {
 	ConfigurationOverlays() ConfigurationOverlayInformer
 	// DefaultStorageClasses returns a DefaultStorageClassInformer.
 	DefaultStorageClasses() DefaultStorageClassInformer
-	// Licenses returns a LicenseInformer.
-	Licenses() LicenseInformer
 	// RegistryCredentials returns a RegistryCredentialInformer.
 	RegistryCredentials() RegistryCredentialInformer
 	// ResourceGroups returns a ResourceGroupInformer.
@@ -60,11 +58,6 @@ func (v *version) ConfigurationOverlays() ConfigurationOverlayInformer {
 // DefaultStorageClasses returns a DefaultStorageClassInformer.
 func (v *version) DefaultStorageClasses() DefaultStorageClassInformer {
 	return &defaultStorageClassInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
-}
-
-// Licenses returns a LicenseInformer.
-func (v *version) Licenses() LicenseInformer {
-	return &licenseInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }
 
 // RegistryCredentials returns a RegistryCredentialInformer.

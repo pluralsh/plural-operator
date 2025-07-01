@@ -35,10 +35,6 @@ func (c *FakePlatformV1alpha1) DefaultStorageClasses(namespace string) v1alpha1.
 	return &FakeDefaultStorageClasses{c, namespace}
 }
 
-func (c *FakePlatformV1alpha1) Licenses(namespace string) v1alpha1.LicenseInterface {
-	return &FakeLicenses{c, namespace}
-}
-
 func (c *FakePlatformV1alpha1) RegistryCredentials(namespace string) v1alpha1.RegistryCredentialInterface {
 	return &FakeRegistryCredentials{c, namespace}
 }

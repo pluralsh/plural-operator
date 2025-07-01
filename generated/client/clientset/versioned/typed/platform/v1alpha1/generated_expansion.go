@@ -21,8 +21,6 @@ type ConfigurationOverlayExpansion interface{}
 
 type DefaultStorageClassExpansion interface{}
 
-type LicenseExpansion interface{}
-
 type RegistryCredentialExpansion interface{}
 
 type ResourceGroupExpansion interface{}

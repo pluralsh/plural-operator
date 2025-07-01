@@ -33,14 +33,6 @@ type DefaultStorageClassListerExpansion interface{}
 // DefaultStorageClassNamespaceLister.
 type DefaultStorageClassNamespaceListerExpansion interface{}
 
-// LicenseListerExpansion allows custom methods to be added to
-// LicenseLister.
-type LicenseListerExpansion interface{}
-
-// LicenseNamespaceListerExpansion allows custom methods to be added to
-// LicenseNamespaceLister.
-type LicenseNamespaceListerExpansion interface{}
-
 // RegistryCredentialListerExpansion allows custom methods to be added to
 // RegistryCredentialLister.
 type RegistryCredentialListerExpansion interface{}

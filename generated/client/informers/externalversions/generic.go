@@ -56,8 +56,6 @@ func (f *sharedInformerFactory) ForResource(resource schema.GroupVersionResource
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Platform().V1alpha1().ConfigurationOverlays().Informer()}, nil
 	case v1alpha1.SchemeGroupVersion.WithResource("defaultstorageclasses"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Platform().V1alpha1().DefaultStorageClasses().Informer()}, nil
-	case v1alpha1.SchemeGroupVersion.WithResource("licenses"):
-		return &genericInformer{resource: resource.GroupResource(), informer: f.Platform().V1alpha1().Licenses().Informer()}, nil
 	case v1alpha1.SchemeGroupVersion.WithResource("registrycredentials"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Platform().V1alpha1().RegistryCredentials().Informer()}, nil
 	case v1alpha1.SchemeGroupVersion.WithResource("resourcegroups"):

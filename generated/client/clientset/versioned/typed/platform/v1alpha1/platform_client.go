@@ -29,7 +29,6 @@ type PlatformV1alpha1Interface interface {
 	RESTClient() rest.Interface
 	ConfigurationOverlaysGetter
 	DefaultStorageClassesGetter
-	LicensesGetter
 	RegistryCredentialsGetter
 	ResourceGroupsGetter
 	SecretSyncsGetter
@@ -48,10 +47,6 @@ func (c *PlatformV1alpha1Client) ConfigurationOverlays(namespace string) Configu
 
 func (c *PlatformV1alpha1Client) DefaultStorageClasses(namespace string) DefaultStorageClassInterface {
 	return newDefaultStorageClasses(c, namespace)
-}
-
-func (c *PlatformV1alpha1Client) Licenses(namespace string) LicenseInterface {
-	return newLicenses(c, namespace)
 }
 
 func (c *PlatformV1alpha1Client) RegistryCredentials(namespace string) RegistryCredentialInterface {
