@@ -115,14 +115,6 @@ INFORMER_GEN = $(shell pwd)/bin/informer-gen
 informer-gen: ## Download informer-gen locally if necessary.
 	$(call go-get-tool,$(INFORMER_GEN),k8s.io/code-generator/cmd/informer-gen@v0.25.3)
 
-DEFFAULTER_GEN = $(shell pwd)/bin/defaulter-gen
-defaulter-gen: ## Download defaulter-gen locally if necessary.
-	$(call go-get-tool,$(DEFFAULTER_GEN),k8s.io/code-generator/cmd/defaulter-gen@v0.25.3)
-
-DEEPCOPY_GEN = $(shell pwd)/bin/deepcopy-gen
-deepcopy-gen: ## Download deepcopy-gen locally if necessary.
-	$(call go-get-tool,$(DEEPCOPY_GEN),k8s.io/code-generator/cmd/deepcopy-gen@v0.25.3)
-
 # go-get-tool will 'go get' any package $2 and install it to $1.
 PROJECT_DIR := $(shell dirname $(abspath $(lastword $(MAKEFILE_LIST))))
 define go-get-tool
