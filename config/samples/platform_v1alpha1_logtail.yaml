@@ -1,7 +1,0 @@
-apiVersion: platform.plural.sh/v1alpha1
-kind: LogTail
-metadata:
-  name: logtail-sample
-spec:
-  # Add fields here
-  foo: bar

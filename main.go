@@ -21,28 +21,26 @@ import (
 	"os"
 
 	"github.com/pluralsh/plural-operator/controllers"
+	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 
+	platformv1alpha1 "github.com/pluralsh/plural-operator/apis/platform/v1alpha1"
+	amv1alpha1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1alpha1"
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
 	clientgoscheme "k8s.io/client-go/kubernetes/scheme"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
-
-	"github.com/pluralsh/plural-operator/alertmanager"
-	platformv1alpha1 "github.com/pluralsh/plural-operator/apis/platform/v1alpha1"
-	vpnv1alpha1 "github.com/pluralsh/plural-operator/apis/vpn/v1alpha1"
-	amv1alpha1 "github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring/v1alpha1"
+	metricsserver "sigs.k8s.io/controller-runtime/pkg/metrics/server"
 
 	"sigs.k8s.io/controller-runtime/pkg/webhook"
 
 	platformhooks "github.com/pluralsh/plural-operator/apis/platform/v1alpha1/hooks"
 	securityhooks "github.com/pluralsh/plural-operator/apis/security/v1alpha1/hooks"
-	vpncontrollers "github.com/pluralsh/plural-operator/controllers/vpn"
 	//+kubebuilder:scaffold:imports
 )
 
@@ -58,7 +56,6 @@ func init() {
 
 	utilruntime.Must(amv1alpha1.AddToScheme(scheme))
 
-	utilruntime.Must(vpnv1alpha1.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 
@@ -82,40 +79,13 @@ func main() {
 
 	mgr, err := ctrl.NewManager(ctrl.GetConfigOrDie(), ctrl.Options{
 		Scheme:                 scheme,
-		MetricsBindAddress:     metricsAddr,
-		Port:                   9443,
+		Metrics:                metricsserver.Options{BindAddress: metricsAddr},
 		HealthProbeBindAddress: probeAddr,
 		LeaderElection:         enableLeaderElection,
 		LeaderElectionID:       "0247ec41.plural.sh",
 	})
 	if err != nil {
 		setupLog.Error(err, "unable to start manager")
-		os.Exit(1)
-	}
-	if err = (&controllers.PodReconciler{
-		Client: mgr.GetClient(),
-		Log:    ctrl.Log.WithName("controllers").WithName("Pod"),
-		Scheme: mgr.GetScheme(),
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "Pod")
-		os.Exit(1)
-	}
-
-	if err = (&controllers.SecretSyncReconciler{
-		Client: mgr.GetClient(),
-		Log:    ctrl.Log.WithName("controllers").WithName("SecretSync"),
-		Scheme: mgr.GetScheme(),
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "SecretSync")
-		os.Exit(1)
-	}
-
-	if err = (&controllers.ServiceAccountReconciler{
-		Client: mgr.GetClient(),
-		Log:    ctrl.Log.WithName("controllers").WithName("ServiceAccount"),
-		Scheme: mgr.GetScheme(),
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "ServiceAccount")
 		os.Exit(1)
 	}
 
@@ -125,24 +95,6 @@ func main() {
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "Job")
-		os.Exit(1)
-	}
-
-	if err = (&controllers.NamespaceReconciler{
-		Client: mgr.GetClient(),
-		Log:    ctrl.Log.WithName("controllers").WithName("Namespace"),
-		Scheme: mgr.GetScheme(),
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "Namespace")
-		os.Exit(1)
-	}
-
-	if err = (&controllers.SecretReconciler{
-		Client: mgr.GetClient(),
-		Log:    ctrl.Log.WithName("controllers").WithName("Secret"),
-		Scheme: mgr.GetScheme(),
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "Secret")
 		os.Exit(1)
 	}
 
@@ -160,14 +112,6 @@ func main() {
 		Scheme: mgr.GetScheme(),
 	}).SetupWithManager(mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "DefaultStorageClass")
-		os.Exit(1)
-	}
-	if err = (&controllers.LicenseReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
-		Log:    ctrl.Log.WithName("controllers").WithName("License"),
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "License")
 		os.Exit(1)
 	}
 
@@ -190,41 +134,7 @@ func main() {
 		setupLog.Error(err, "unable to create controller", "controller", "OauthConfigMapRedeploy")
 		os.Exit(1)
 	}
-	if err = (&controllers.RedeploySecretReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
-		Log:    ctrl.Log.WithName("controllers").WithName("SecretRedeploy"),
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "SecretRedeploy")
-		os.Exit(1)
-	}
 
-	if err = (&controllers.PodSweeperReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
-		Log:    ctrl.Log.WithName("controllers").WithName("PodSweeperController"),
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "PodSweeperController")
-		os.Exit(1)
-	}
-
-	if err = (&vpncontrollers.WireguardServerReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
-		Log:    ctrl.Log.WithName("controllers").WithName("WireguardServer"),
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "WireguardServer")
-		os.Exit(1)
-	}
-
-	if err = (&vpncontrollers.WireguardPeerReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
-		Log:    ctrl.Log.WithName("controllers").WithName("WireguardPeer"),
-	}).SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "WireguardPeer")
-		os.Exit(1)
-	}
 	// //+kubebuilder:scaffold:builder
 
 	if err := mgr.AddHealthzCheck("healthz", healthz.Ping); err != nil {
@@ -239,22 +149,6 @@ func main() {
 	// add webhook handler for alertmanager
 	ctx := ctrl.SetupSignalHandler()
 
-	amr := &alertmanager.AlertmanagerReconciler{
-		Client: mgr.GetClient(),
-		Log:    ctrl.Log.WithName("controllers").WithName("Alertmanager"),
-		Scheme: mgr.GetScheme(),
-	}
-
-	if err := amr.SetupWithManager(mgr); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "alertmanager")
-		os.Exit(1)
-	}
-
-	if err := mgr.AddMetricsExtraHandler("/webhook", alertmanager.AlertmanagerHandler(ctx, amr)); err != nil {
-		setupLog.Error(err, "unable to set up alertmanager webhook")
-		os.Exit(1)
-	}
-
 	// Setup oauth injector mutating webhook
 	if os.Getenv("ENABLE_WEBHOOKS") != "false" {
 		mgr.GetWebhookServer().Register(
@@ -262,6 +156,7 @@ func main() {
 			&webhook.Admission{
 				Handler: &securityhooks.OAuthInjector{
 					Name:               "oauth2-proxy",
+					Decoder:            admission.NewDecoder(mgr.GetScheme()),
 					Log:                ctrl.Log.WithName("webhooks").WithName("oauth-injector"),
 					Client:             mgr.GetClient(),
 					ConfigMapName:      os.Getenv("PLURAL_OAUTH_SIDECAR_CONFIG_NAME"),
@@ -274,9 +169,10 @@ func main() {
 			"/mutate-platform-plural-sh-v1alpha1-affinityinjector",
 			&webhook.Admission{
 				Handler: &platformhooks.AffinityInjector{
-					Name:   "affinity-injector",
-					Log:    ctrl.Log.WithName("webhooks").WithName("affinity-injector"),
-					Client: mgr.GetClient(),
+					Name:    "affinity-injector",
+					Decoder: admission.NewDecoder(mgr.GetScheme()),
+					Log:     ctrl.Log.WithName("webhooks").WithName("affinity-injector"),
+					Client:  mgr.GetClient(),
 				},
 			},
 		)

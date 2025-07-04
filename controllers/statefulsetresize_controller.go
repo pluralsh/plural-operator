@@ -23,7 +23,7 @@ import (
 
 	"github.com/go-logr/logr"
 	platformv1alpha1 "github.com/pluralsh/plural-operator/apis/platform/v1alpha1"
-	"github.com/pluralsh/plural-operator/resources"
+	"github.com/samber/lo"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	storagev1 "k8s.io/api/storage/v1"
@@ -133,7 +133,7 @@ func (r *StatefulSetResizeReconciler) Reconcile(ctx context.Context, req ctrl.Re
 		}
 
 		if !found {
-			err := fmt.Errorf("Could not find default storage class")
+			err := fmt.Errorf("could not find default storage class")
 			log.Error(err, "could not find default storage class")
 			return ctrl.Result{}, err
 		}
@@ -145,7 +145,7 @@ func (r *StatefulSetResizeReconciler) Reconcile(ctx context.Context, req ctrl.Re
 	}
 
 	if storageClass.AllowVolumeExpansion == nil || !*storageClass.AllowVolumeExpansion {
-		storageClass.AllowVolumeExpansion = resources.BoolPtr(true)
+		storageClass.AllowVolumeExpansion = lo.ToPtr(true)
 		if err := r.Update(ctx, &storageClass); err != nil {
 			log.Error(err, "Failed to enable volume expansion for storage class", "storageclass", storageClass.Name)
 			return ctrl.Result{}, err

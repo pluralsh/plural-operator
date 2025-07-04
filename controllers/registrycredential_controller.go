@@ -34,10 +34,12 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"sigs.k8s.io/controller-runtime/pkg/source"
 )
 
-const dockerconfigjson = ".dockerconfigjson"
+const (
+	dockerconfigjson = ".dockerconfigjson"
+	secretSyncLabel  = "platform.plural.sh/sync"
+)
 
 type RegistryCred struct {
 	Auth     string `json:"auth"`
@@ -60,7 +62,7 @@ type RegistryCredentialsReconciler struct {
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
 // TODO(user): Modify the Reconcile function to compare the state specified by
-// the SecretSync object against the actual cluster state, and then
+// the RegistryCredential object against the actual cluster state, and then
 // perform operations to make the cluster state reflect the state specified by
 // the user.
 //
@@ -184,7 +186,7 @@ func (r *RegistryCredentialsReconciler) deleteRegistryCredentialSecret(ctx conte
 
 // requestFromSecret returns a reconcile.Request for the credential registry if the secret is a password reference.
 func requestFromSecret(c client.Client) handler.EventHandler {
-	return handler.EnqueueRequestsFromMapFunc(func(mo client.Object) []reconcile.Request {
+	return handler.EnqueueRequestsFromMapFunc(func(ctx context.Context, mo client.Object) []reconcile.Request {
 		secret, ok := mo.(*corev1.Secret)
 		if !ok {
 			err := fmt.Errorf("object was not a secret but a %T", mo)
@@ -212,6 +214,6 @@ func requestFromSecret(c client.Client) handler.EventHandler {
 func (r *RegistryCredentialsReconciler) SetupWithManager(mgr ctrl.Manager) error {
 	return ctrl.NewControllerManagedBy(mgr).
 		For(&platformv1alpha1.RegistryCredential{}).
-		Watches(&source.Kind{Type: &corev1.Secret{}}, requestFromSecret(mgr.GetClient())).
+		Watches(&corev1.Secret{}, requestFromSecret(mgr.GetClient())).
 		Complete(r)
 }

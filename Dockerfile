@@ -1,5 +1,5 @@
 # Build the manager binary
-FROM golang:1.18.2-alpine3.15 as builder
+FROM golang:1.24-alpine3.22 as builder
 
 ARG TARGETARCH
 
@@ -15,7 +15,6 @@ RUN go mod download
 COPY main.go main.go
 COPY apis/ apis/
 COPY controllers/ controllers/
-COPY alertmanager/ alertmanager/
 COPY resources/ resources/
 COPY services/ services/
 

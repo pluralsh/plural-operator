@@ -39,7 +39,8 @@ type JobReconciler struct {
 }
 
 const (
-	expiresAfter = 5 * time.Hour * 24
+	expiresAfter    = 5 * time.Hour * 24
+	managedByPlural = "plural"
 )
 
 //+kubebuilder:rbac:groups="batch",resources=jobs,verbs=get;list;update
@@ -47,7 +48,7 @@ const (
 // Reconcile is part of the main kubernetes reconciliation loop which aims to
 // move the current state of the cluster closer to the desired state.
 // TODO(user): Modify the Reconcile function to compare the state specified by
-// the SecretSync object against the actual cluster state, and then
+// the Job object against the actual cluster state, and then
 // perform operations to make the cluster state reflect the state specified by
 // the user.
 //
@@ -56,7 +57,7 @@ const (
 func (r *JobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := r.Log.WithValues("Job", req.NamespacedName)
 
-	ns := req.NamespacedName.Namespace
+	ns := req.Namespace
 	var namespace corev1.Namespace
 	if err := r.Get(ctx, types.NamespacedName{Name: ns}, &namespace); err != nil {
 		if apierrors.IsNotFound(err) {
@@ -66,7 +67,7 @@ func (r *JobReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.R
 		return ctrl.Result{}, err
 	}
 
-	if val, ok := namespace.Labels[managedLabel]; !ok || val != "plural" {
+	if val, ok := namespace.Labels[managedLabel]; !ok || val != managedByPlural {
 		log.Info(fmt.Sprintf("Namespace %s not managed by plural", ns))
 		return ctrl.Result{}, nil
 	}

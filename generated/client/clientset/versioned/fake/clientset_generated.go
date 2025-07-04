@@ -21,8 +21,6 @@ import (
 	clientset "github.com/pluralsh/plural-operator/generated/client/clientset/versioned"
 	platformv1alpha1 "github.com/pluralsh/plural-operator/generated/client/clientset/versioned/typed/platform/v1alpha1"
 	fakeplatformv1alpha1 "github.com/pluralsh/plural-operator/generated/client/clientset/versioned/typed/platform/v1alpha1/fake"
-	vpnv1alpha1 "github.com/pluralsh/plural-operator/generated/client/clientset/versioned/typed/vpn/v1alpha1"
-	fakevpnv1alpha1 "github.com/pluralsh/plural-operator/generated/client/clientset/versioned/typed/vpn/v1alpha1/fake"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/discovery"
@@ -83,9 +81,4 @@ var (
 // PlatformV1alpha1 retrieves the PlatformV1alpha1Client
 func (c *Clientset) PlatformV1alpha1() platformv1alpha1.PlatformV1alpha1Interface {
 	return &fakeplatformv1alpha1.FakePlatformV1alpha1{Fake: &c.Fake}
-}
-
-// VpnV1alpha1 retrieves the VpnV1alpha1Client
-func (c *Clientset) VpnV1alpha1() vpnv1alpha1.VpnV1alpha1Interface {
-	return &fakevpnv1alpha1.FakeVpnV1alpha1{Fake: &c.Fake}
 }

@@ -31,36 +31,34 @@ help: ## Display this help.
 
 ##@ Development
 
+codegen: manifests generate generate-client
+
 manifests: controller-gen ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition objects.
 	$(CONTROLLER_GEN) $(CRD_OPTIONS) rbac:roleName=manager-role webhook paths="./apis/..." output:crd:artifacts:config=config/crd/bases
 
 generate: controller-gen generate-client ## Generate code containing DeepCopy, DeepCopyInto, and DeepCopyObject method implementations and the clientset, informers and listers.
-	$(CONTROLLER_GEN) object:headerFile="hack/boilerplate.go.txt" paths="./apis/..."
+	$(CONTROLLER_GEN) object:headerFile=boilerplate.go.txt paths=./apis/...
 
-fmt: ## Run go fmt against code.
-	go fmt ./...
+.PHONY: lint
+lint: golangci-lint ## run linters
+	$(GOLANGCI_LINT) run ./...
 
-vet: ## Run go vet against code.
-	go vet ./...
+.PHONY: fix
+fix: golangci-lint ## fix issues found by linters
+	$(GOLANGCI_LINT) run --fix ./...
 
-ENVTEST_ASSETS_DIR=$(shell pwd)/testbin
-test: manifests generate fmt vet ## Run tests.
-	mkdir -p ${ENVTEST_ASSETS_DIR}
-	test -f ${ENVTEST_ASSETS_DIR}/setup-envtest.sh || curl -sSLo ${ENVTEST_ASSETS_DIR}/setup-envtest.sh https://raw.githubusercontent.com/kubernetes-sigs/controller-runtime/v0.7.2/hack/setup-envtest.sh
-	source ${ENVTEST_ASSETS_DIR}/setup-envtest.sh; fetch_envtest_tools $(ENVTEST_ASSETS_DIR); setup_envtest_env $(ENVTEST_ASSETS_DIR); go test ./... -coverprofile cover.out
-
-unit-test:
+test:
 	go test -tags=unit -v -race ./controllers/...
 
 ##@ Build
 
-build: generate fmt vet ## Build manager binary.
+build: ## Build manager binary.
 	go build -o bin/manager main.go
 
-run: manifests generate fmt vet ## Run a controller from your host.
+run: ## Run a controller from your host.
 	ENABLE_WEBHOOKS=false go run ./main.go -zap-devel -zap-log-level 2
 
-docker-build: build ## Build docker image with the manager.
+docker-build: ## Build docker image with the manager.
 	docker build -t ${IMG} .
 
 docker-push: ## Push docker image with the manager.
@@ -82,22 +80,22 @@ undeploy: ## Undeploy controller from the K8s cluster specified in ~/.kube/confi
 	$(KUSTOMIZE) build config/default | kubectl delete -f -
 
 run-client-gen: client-gen
-	$(CLIENT_GEN) --clientset-name versioned --input-base github.com/pluralsh/plural-operator/apis --input platform/v1alpha1,vpn/v1alpha1 --output-package github.com/pluralsh/plural-operator/generated/client/clientset --go-header-file hack/boilerplate.go.txt
+	$(CLIENT_GEN) -h=boilerplate.go.txt -n=versioned -o=. -p=github.com/pluralsh/plural-operator/generated/client/clientset --input=platform/v1alpha1 --input-base=github.com/pluralsh/plural-operator/apis --trim-path-prefix=github.com/pluralsh/plural-operator
 
 run-lister-gen: lister-gen
-	$(LISTER_GEN) --input-dirs github.com/pluralsh/plural-operator/apis/platform/v1alpha1,github.com/pluralsh/plural-operator/apis/vpn/v1alpha1 --output-package github.com/pluralsh/plural-operator/generated/client/listers --go-header-file hack/boilerplate.go.txt
+	$(LISTER_GEN) -h=boilerplate.go.txt -o=. --trim-path-prefix=github.com/pluralsh/plural-operator --input-dirs=github.com/pluralsh/plural-operator/apis/platform/v1alpha1 -p=github.com/pluralsh/plural-operator/generated/client/listers
 
 run-informer-gen: informer-gen
-	$(INFORMER_GEN) --input-dirs github.com/pluralsh/plural-operator/apis/platform/v1alpha1,github.com/pluralsh/plural-operator/apis/vpn/v1alpha1  --versioned-clientset-package github.com/pluralsh/plural-operator/generated/client/clientset/versioned --listers-package github.com/pluralsh/plural-operator/generated/client/listers --output-package github.com/pluralsh/plural-operator/generated/client/informers --go-header-file hack/boilerplate.go.txt
+	$(INFORMER_GEN) -h=boilerplate.go.txt -o=. --trim-path-prefix=github.com/pluralsh/plural-operator --input-dirs github.com/pluralsh/plural-operator/apis/platform/v1alpha1 --versioned-clientset-package github.com/pluralsh/plural-operator/generated/client/clientset/versioned --listers-package github.com/pluralsh/plural-operator/generated/client/listers --output-package github.com/pluralsh/plural-operator/generated/client/informers
 
-generate-client: run-client-gen run-lister-gen run-informer-gen
+clean-codegen:
 	rm -rf generated
-	mv github.com/pluralsh/plural-operator/generated generated
-	rm -rf github.com
+
+generate-client: clean-codegen run-client-gen run-lister-gen run-informer-gen
 
 CONTROLLER_GEN = $(shell pwd)/bin/controller-gen
 controller-gen: ## Download controller-gen locally if necessary.
-	$(call go-get-tool,$(CONTROLLER_GEN),sigs.k8s.io/controller-tools/cmd/controller-gen@v0.9.2)
+	$(call go-get-tool,$(CONTROLLER_GEN),sigs.k8s.io/controller-tools/cmd/controller-gen@v0.16.3)
 
 KUSTOMIZE = $(shell pwd)/bin/kustomize
 kustomize: ## Download kustomize locally if necessary.
@@ -115,13 +113,9 @@ INFORMER_GEN = $(shell pwd)/bin/informer-gen
 informer-gen: ## Download informer-gen locally if necessary.
 	$(call go-get-tool,$(INFORMER_GEN),k8s.io/code-generator/cmd/informer-gen@v0.25.3)
 
-DEFFAULTER_GEN = $(shell pwd)/bin/defaulter-gen
-defaulter-gen: ## Download defaulter-gen locally if necessary.
-	$(call go-get-tool,$(DEFFAULTER_GEN),k8s.io/code-generator/cmd/defaulter-gen@v0.25.3)
-
-DEEPCOPY_GEN = $(shell pwd)/bin/deepcopy-gen
-deepcopy-gen: ## Download deepcopy-gen locally if necessary.
-	$(call go-get-tool,$(DEEPCOPY_GEN),k8s.io/code-generator/cmd/deepcopy-gen@v0.25.3)
+GOLANGCI_LINT = $(shell pwd)/bin/golangci-lint
+golangci-lint: ## Download golangci-lint locally if necessary.
+	$(call go-get-tool,$(GOLANGCI_LINT),github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.1.2)
 
 # go-get-tool will 'go get' any package $2 and install it to $1.
 PROJECT_DIR := $(shell dirname $(abspath $(lastword $(MAKEFILE_LIST))))

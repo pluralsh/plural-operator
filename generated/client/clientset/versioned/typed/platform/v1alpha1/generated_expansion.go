@@ -19,25 +19,11 @@ package v1alpha1
 
 type ConfigurationOverlayExpansion interface{}
 
-type DashboardExpansion interface{}
-
 type DefaultStorageClassExpansion interface{}
-
-type LicenseExpansion interface{}
-
-type LogFilterExpansion interface{}
-
-type LogTailExpansion interface{}
-
-type ProxyExpansion interface{}
 
 type RegistryCredentialExpansion interface{}
 
 type ResourceGroupExpansion interface{}
-
-type RunbookExpansion interface{}
-
-type SecretSyncExpansion interface{}
 
 type SlashCommandExpansion interface{}
 

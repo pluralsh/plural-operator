@@ -36,7 +36,7 @@ type AffinityInjector struct {
 	client.Client
 	Name    string
 	Log     logr.Logger
-	decoder *admission.Decoder
+	Decoder admission.Decoder
 }
 
 const (
@@ -46,10 +46,10 @@ const (
 
 // AffinityInjector adds configured node affinities to a pod
 func (ai *AffinityInjector) Handle(ctx context.Context, req admission.Request) admission.Response {
-	log := ai.Log.WithValues("webhook", req.AdmissionRequest.Name)
+	log := ai.Log.WithValues("webhook", req.Name)
 	pod := &corev1.Pod{}
 
-	err := ai.decoder.Decode(req, pod)
+	err := ai.Decoder.Decode(req, pod)
 	if err != nil {
 		log.Info("Affinity-Injector: cannot decode")
 		return admission.Errored(http.StatusBadRequest, err)
@@ -57,14 +57,14 @@ func (ai *AffinityInjector) Handle(ctx context.Context, req admission.Request) a
 
 	log.Info("Injecting affinity rules...")
 
-	groupstr, _ := pod.Labels[groupLabel]
+	groupstr := pod.Labels[groupLabel]
 	relevantGroup := map[string]bool{}
 	for _, group := range strings.Split(groupstr, ",") {
 		relevantGroup[group] = true
 	}
 
 	var rgs platformv1alpha1.ResourceGroupList
-	if err := ai.Client.List(ctx, &rgs); err != nil {
+	if err := ai.List(ctx, &rgs); err != nil {
 		log.Error(err, "Failed to list resource groups")
 		return admission.Errored(http.StatusInternalServerError, err)
 	}
@@ -117,12 +117,4 @@ func (ai *AffinityInjector) Handle(ctx context.Context, req admission.Request) a
 	}
 
 	return admission.PatchResponseFromRaw(req.Object.Raw, marshaledPod)
-}
-
-// AffinityInjector implements admission.DecoderInjector.
-// A decoder will be automatically injected.
-// InjectDecoder injects the decoder.
-func (ai *AffinityInjector) InjectDecoder(d *admission.Decoder) error {
-	ai.decoder = d
-	return nil
 }
