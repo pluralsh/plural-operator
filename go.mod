@@ -7,7 +7,7 @@ toolchain go1.24.4
 require (
 	github.com/go-logr/logr v1.4.3
 	github.com/onsi/ginkgo v1.16.5
-	github.com/onsi/gomega v1.36.1
+	github.com/onsi/gomega v1.36.3
 	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.83.0
 	github.com/samber/lo v1.51.0
 	github.com/stretchr/testify v1.10.0
