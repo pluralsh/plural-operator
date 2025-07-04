@@ -1,4 +1,4 @@
-name: Publish image
+name: CD
 
 on:
   push:
@@ -135,7 +135,11 @@ jobs:
             dkr.plural.sh/bootstrap/plural-operator
             gcr.io/pluralsh/plural-operator
             ghcr.io/pluralsh/plural-operator
-          tags: type=semver,pattern={{version}}
+          tags: |
+            type=sha
+            type=ref,event=pr
+            type=ref,event=branch
+            type=semver,pattern={{version}}
       - name: Create manifest list and push
         working-directory: ${{ runner.temp }}/digests
         run: |

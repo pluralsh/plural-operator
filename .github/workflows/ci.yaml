@@ -17,19 +17,6 @@ jobs:
           go-version-file: go.mod
           cache: true
       - run: make build
-  image:
-    name: Build image
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: docker/setup-qemu-action@v3
-      - uses: docker/setup-buildx-action@v3
-      - uses: docker/build-push-action@v6
-        with:
-          context: "."
-          file: "./Dockerfile"
-          push: false
-          platforms: linux/amd64,linux/arm64
   test:
     name: Unit test
     runs-on: ubuntu-latest
