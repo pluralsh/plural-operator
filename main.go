@@ -21,6 +21,7 @@ import (
 	"os"
 
 	"github.com/pluralsh/plural-operator/controllers"
+	"sigs.k8s.io/controller-runtime/pkg/webhook/admission"
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
@@ -155,6 +156,7 @@ func main() {
 			&webhook.Admission{
 				Handler: &securityhooks.OAuthInjector{
 					Name:               "oauth2-proxy",
+					Decoder:            admission.NewDecoder(mgr.GetScheme()),
 					Log:                ctrl.Log.WithName("webhooks").WithName("oauth-injector"),
 					Client:             mgr.GetClient(),
 					ConfigMapName:      os.Getenv("PLURAL_OAUTH_SIDECAR_CONFIG_NAME"),
@@ -167,9 +169,10 @@ func main() {
 			"/mutate-platform-plural-sh-v1alpha1-affinityinjector",
 			&webhook.Admission{
 				Handler: &platformhooks.AffinityInjector{
-					Name:   "affinity-injector",
-					Log:    ctrl.Log.WithName("webhooks").WithName("affinity-injector"),
-					Client: mgr.GetClient(),
+					Name:    "affinity-injector",
+					Decoder: admission.NewDecoder(mgr.GetScheme()),
+					Log:     ctrl.Log.WithName("webhooks").WithName("affinity-injector"),
+					Client:  mgr.GetClient(),
 				},
 			},
 		)

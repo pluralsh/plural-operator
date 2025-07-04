@@ -36,7 +36,7 @@ type AffinityInjector struct {
 	client.Client
 	Name    string
 	Log     logr.Logger
-	decoder admission.Decoder
+	Decoder admission.Decoder
 }
 
 const (
@@ -49,7 +49,7 @@ func (ai *AffinityInjector) Handle(ctx context.Context, req admission.Request) a
 	log := ai.Log.WithValues("webhook", req.Name)
 	pod := &corev1.Pod{}
 
-	err := ai.decoder.Decode(req, pod)
+	err := ai.Decoder.Decode(req, pod)
 	if err != nil {
 		log.Info("Affinity-Injector: cannot decode")
 		return admission.Errored(http.StatusBadRequest, err)
@@ -117,12 +117,4 @@ func (ai *AffinityInjector) Handle(ctx context.Context, req admission.Request) a
 	}
 
 	return admission.PatchResponseFromRaw(req.Object.Raw, marshaledPod)
-}
-
-// AffinityInjector implements admission.DecoderInjector.
-// A decoder will be automatically injected.
-// InjectDecoder injects the decoder.
-func (ai *AffinityInjector) InjectDecoder(d admission.Decoder) error {
-	ai.decoder = d
-	return nil
 }

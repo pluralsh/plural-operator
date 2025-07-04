@@ -40,7 +40,7 @@ type OAuthInjector struct {
 	Name               string
 	Client             client.Client
 	Log                logr.Logger
-	decoder            admission.Decoder
+	Decoder            admission.Decoder
 	ConfigMapName      string
 	ConfigMapNamespace string
 }
@@ -58,7 +58,7 @@ func (oi *OAuthInjector) Handle(ctx context.Context, req admission.Request) admi
 	log := oi.Log.WithValues("webhook", req.Name)
 	pod := &corev1.Pod{}
 
-	err := oi.decoder.Decode(req, pod)
+	err := oi.Decoder.Decode(req, pod)
 	if err != nil {
 		log.Info("Sdecar-Injector: cannot decode")
 		return admission.Errored(http.StatusBadRequest, err)
@@ -150,12 +150,4 @@ func (oi *OAuthInjector) Handle(ctx context.Context, req admission.Request) admi
 	}
 
 	return admission.PatchResponseFromRaw(req.Object.Raw, marshaledPod)
-}
-
-// OidcInjector implements admission.DecoderInjector.
-// A decoder will be automatically inj1ected.
-// InjectDecoder injects the decoder.
-func (oi *OAuthInjector) InjectDecoder(d admission.Decoder) error {
-	oi.decoder = d
-	return nil
 }
