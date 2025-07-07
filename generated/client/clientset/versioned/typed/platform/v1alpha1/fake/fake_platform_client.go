@@ -27,10 +27,6 @@ type FakePlatformV1alpha1 struct {
 	*testing.Fake
 }
 
-func (c *FakePlatformV1alpha1) ConfigurationOverlays(namespace string) v1alpha1.ConfigurationOverlayInterface {
-	return &FakeConfigurationOverlays{c, namespace}
-}
-
 func (c *FakePlatformV1alpha1) DefaultStorageClasses(namespace string) v1alpha1.DefaultStorageClassInterface {
 	return &FakeDefaultStorageClasses{c, namespace}
 }
@@ -41,10 +37,6 @@ func (c *FakePlatformV1alpha1) RegistryCredentials(namespace string) v1alpha1.Re
 
 func (c *FakePlatformV1alpha1) ResourceGroups(namespace string) v1alpha1.ResourceGroupInterface {
 	return &FakeResourceGroups{c, namespace}
-}
-
-func (c *FakePlatformV1alpha1) SlashCommands(namespace string) v1alpha1.SlashCommandInterface {
-	return &FakeSlashCommands{c, namespace}
 }
 
 func (c *FakePlatformV1alpha1) StatefulSetResizes(namespace string) v1alpha1.StatefulSetResizeInterface {

@@ -17,14 +17,10 @@ limitations under the License.
 
 package v1alpha1
 
-type ConfigurationOverlayExpansion interface{}
-
 type DefaultStorageClassExpansion interface{}
 
 type RegistryCredentialExpansion interface{}
 
 type ResourceGroupExpansion interface{}
-
-type SlashCommandExpansion interface{}
 
 type StatefulSetResizeExpansion interface{}

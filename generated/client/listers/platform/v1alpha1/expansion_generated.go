@@ -17,14 +17,6 @@ limitations under the License.
 
 package v1alpha1
 
-// ConfigurationOverlayListerExpansion allows custom methods to be added to
-// ConfigurationOverlayLister.
-type ConfigurationOverlayListerExpansion interface{}
-
-// ConfigurationOverlayNamespaceListerExpansion allows custom methods to be added to
-// ConfigurationOverlayNamespaceLister.
-type ConfigurationOverlayNamespaceListerExpansion interface{}
-
 // DefaultStorageClassListerExpansion allows custom methods to be added to
 // DefaultStorageClassLister.
 type DefaultStorageClassListerExpansion interface{}
@@ -48,14 +40,6 @@ type ResourceGroupListerExpansion interface{}
 // ResourceGroupNamespaceListerExpansion allows custom methods to be added to
 // ResourceGroupNamespaceLister.
 type ResourceGroupNamespaceListerExpansion interface{}
-
-// SlashCommandListerExpansion allows custom methods to be added to
-// SlashCommandLister.
-type SlashCommandListerExpansion interface{}
-
-// SlashCommandNamespaceListerExpansion allows custom methods to be added to
-// SlashCommandNamespaceLister.
-type SlashCommandNamespaceListerExpansion interface{}
 
 // StatefulSetResizeListerExpansion allows custom methods to be added to
 // StatefulSetResizeLister.

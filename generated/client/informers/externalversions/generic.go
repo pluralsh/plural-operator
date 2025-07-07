@@ -52,16 +52,12 @@ func (f *genericInformer) Lister() cache.GenericLister {
 func (f *sharedInformerFactory) ForResource(resource schema.GroupVersionResource) (GenericInformer, error) {
 	switch resource {
 	// Group=platform.plural.sh, Version=v1alpha1
-	case v1alpha1.SchemeGroupVersion.WithResource("configurationoverlays"):
-		return &genericInformer{resource: resource.GroupResource(), informer: f.Platform().V1alpha1().ConfigurationOverlays().Informer()}, nil
 	case v1alpha1.SchemeGroupVersion.WithResource("defaultstorageclasses"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Platform().V1alpha1().DefaultStorageClasses().Informer()}, nil
 	case v1alpha1.SchemeGroupVersion.WithResource("registrycredentials"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Platform().V1alpha1().RegistryCredentials().Informer()}, nil
 	case v1alpha1.SchemeGroupVersion.WithResource("resourcegroups"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Platform().V1alpha1().ResourceGroups().Informer()}, nil
-	case v1alpha1.SchemeGroupVersion.WithResource("slashcommands"):
-		return &genericInformer{resource: resource.GroupResource(), informer: f.Platform().V1alpha1().SlashCommands().Informer()}, nil
 	case v1alpha1.SchemeGroupVersion.WithResource("statefulsetresizes"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Platform().V1alpha1().StatefulSetResizes().Informer()}, nil
 

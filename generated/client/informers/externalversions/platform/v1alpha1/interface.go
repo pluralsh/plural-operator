@@ -23,16 +23,12 @@ import (
 
 // Interface provides access to all the informers in this group version.
 type Interface interface {
-	// ConfigurationOverlays returns a ConfigurationOverlayInformer.
-	ConfigurationOverlays() ConfigurationOverlayInformer
 	// DefaultStorageClasses returns a DefaultStorageClassInformer.
 	DefaultStorageClasses() DefaultStorageClassInformer
 	// RegistryCredentials returns a RegistryCredentialInformer.
 	RegistryCredentials() RegistryCredentialInformer
 	// ResourceGroups returns a ResourceGroupInformer.
 	ResourceGroups() ResourceGroupInformer
-	// SlashCommands returns a SlashCommandInformer.
-	SlashCommands() SlashCommandInformer
 	// StatefulSetResizes returns a StatefulSetResizeInformer.
 	StatefulSetResizes() StatefulSetResizeInformer
 }
@@ -48,11 +44,6 @@ func New(f internalinterfaces.SharedInformerFactory, namespace string, tweakList
 	return &version{factory: f, namespace: namespace, tweakListOptions: tweakListOptions}
 }
 
-// ConfigurationOverlays returns a ConfigurationOverlayInformer.
-func (v *version) ConfigurationOverlays() ConfigurationOverlayInformer {
-	return &configurationOverlayInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
-}
-
 // DefaultStorageClasses returns a DefaultStorageClassInformer.
 func (v *version) DefaultStorageClasses() DefaultStorageClassInformer {
 	return &defaultStorageClassInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
@@ -66,11 +57,6 @@ func (v *version) RegistryCredentials() RegistryCredentialInformer {
 // ResourceGroups returns a ResourceGroupInformer.
 func (v *version) ResourceGroups() ResourceGroupInformer {
 	return &resourceGroupInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
-}
-
-// SlashCommands returns a SlashCommandInformer.
-func (v *version) SlashCommands() SlashCommandInformer {
-	return &slashCommandInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }
 
 // StatefulSetResizes returns a StatefulSetResizeInformer.
