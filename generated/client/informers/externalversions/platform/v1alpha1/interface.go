@@ -23,8 +23,6 @@ import (
 
 // Interface provides access to all the informers in this group version.
 type Interface interface {
-	// ConfigurationOverlays returns a ConfigurationOverlayInformer.
-	ConfigurationOverlays() ConfigurationOverlayInformer
 	// DefaultStorageClasses returns a DefaultStorageClassInformer.
 	DefaultStorageClasses() DefaultStorageClassInformer
 	// RegistryCredentials returns a RegistryCredentialInformer.
@@ -46,11 +44,6 @@ type version struct {
 // New returns a new Interface.
 func New(f internalinterfaces.SharedInformerFactory, namespace string, tweakListOptions internalinterfaces.TweakListOptionsFunc) Interface {
 	return &version{factory: f, namespace: namespace, tweakListOptions: tweakListOptions}
-}
-
-// ConfigurationOverlays returns a ConfigurationOverlayInformer.
-func (v *version) ConfigurationOverlays() ConfigurationOverlayInformer {
-	return &configurationOverlayInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }
 
 // DefaultStorageClasses returns a DefaultStorageClassInformer.

@@ -38,12 +38,4 @@ resources:
   kind: ResourceGroup
   path: github.com/pluralsh/plural-operator/apis/platform/v1alpha1
   version: v1alpha1
-- api:
-    crdVersion: v1
-    namespaced: true
-  domain: plural.sh
-  group: platform
-  kind: ConfigurationOverlay
-  path: github.com/pluralsh/plural-operator/apis/platform/v1alpha1
-  version: v1alpha1
 version: "3"

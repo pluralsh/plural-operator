@@ -6,7 +6,6 @@ resources:
 - bases/platform.plural.sh_slashcommands.yaml
 - bases/platform.plural.sh_statefulsetresizes.yaml
 - bases/platform.plural.sh_resourcegroups.yaml
-- bases/platform.plural.sh_configurationoverlays.yaml
 - bases/platform.plural.sh_registrycredentials.yaml
 #+kubebuilder:scaffold:crdkustomizeresource
 
@@ -25,7 +24,6 @@ patchesStrategicMerge:
 #- patches/webhook_in_statefulsetresizes.yaml
 #- patches/webhook_in_resourcegroups.yaml
 #- patches/webhook_in_defaultstorageclasses.yaml
-#- patches/webhook_in_configurationoverlays.yaml
 #- patches/webhook_in_registrycredentials.yaml
 #+kubebuilder:scaffold:crdkustomizewebhookpatch
 
@@ -35,7 +33,6 @@ patchesStrategicMerge:
 #- patches/cainjection_in_statefulsetresizes.yaml
 #- patches/cainjection_in_resourcegroups.yaml
 #- patches/cainjection_in_defaultstorageclasses.yaml
-#- patches/cainjection_in_configurationoverlays.yaml
 #- patches/cainjection_in_registrycredentials.yaml
 #+kubebuilder:scaffold:crdkustomizecainjectionpatch
 

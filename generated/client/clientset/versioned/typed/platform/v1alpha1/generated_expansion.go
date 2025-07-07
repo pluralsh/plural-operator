@@ -17,8 +17,6 @@ limitations under the License.
 
 package v1alpha1
 
-type ConfigurationOverlayExpansion interface{}
-
 type DefaultStorageClassExpansion interface{}
 
 type RegistryCredentialExpansion interface{}

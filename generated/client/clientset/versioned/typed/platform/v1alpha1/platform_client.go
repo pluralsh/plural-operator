@@ -27,7 +27,6 @@ import (
 
 type PlatformV1alpha1Interface interface {
 	RESTClient() rest.Interface
-	ConfigurationOverlaysGetter
 	DefaultStorageClassesGetter
 	RegistryCredentialsGetter
 	ResourceGroupsGetter
@@ -38,10 +37,6 @@ type PlatformV1alpha1Interface interface {
 // PlatformV1alpha1Client is used to interact with features provided by the platform.plural.sh group.
 type PlatformV1alpha1Client struct {
 	restClient rest.Interface
-}
-
-func (c *PlatformV1alpha1Client) ConfigurationOverlays(namespace string) ConfigurationOverlayInterface {
-	return newConfigurationOverlays(c, namespace)
 }
 
 func (c *PlatformV1alpha1Client) DefaultStorageClasses(namespace string) DefaultStorageClassInterface {

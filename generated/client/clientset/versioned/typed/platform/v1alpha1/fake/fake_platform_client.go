@@ -27,10 +27,6 @@ type FakePlatformV1alpha1 struct {
 	*testing.Fake
 }
 
-func (c *FakePlatformV1alpha1) ConfigurationOverlays(namespace string) v1alpha1.ConfigurationOverlayInterface {
-	return &FakeConfigurationOverlays{c, namespace}
-}
-
 func (c *FakePlatformV1alpha1) DefaultStorageClasses(namespace string) v1alpha1.DefaultStorageClassInterface {
 	return &FakeDefaultStorageClasses{c, namespace}
 }
