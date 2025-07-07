@@ -23,7 +23,7 @@ spec:
         - /manager
         args:
         - --leader-elect
-        image: "{{ .Values.plural.image.repository }}:{{ .Values.plural.image.tag }}"
+        image: "{{ .Values.plural.image.repository }}:{{ .Values.plural.image.tag | default .Chart.AppVersion }}"
         imagePullPolicy: Always
         name: manager
         securityContext:

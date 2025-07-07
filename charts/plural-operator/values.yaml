@@ -1,11 +1,8 @@
-# Default values for plural-operator.
-# This is a YAML-formatted file.
-# Declare variables to be passed into your templates.
-
 replicaCount: 1
 
 plural:
   enabled: true
   image:
-    repository: dkr.plural.sh/bootstrap/plural-operator
-    tag: 0.6.0
+    repository: docker.io/pluralsh/plural-operator
+    # Overrides the image tag whose default is the chart appVersion.
+    tag: ""
