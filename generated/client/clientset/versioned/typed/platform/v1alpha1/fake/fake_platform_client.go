@@ -39,10 +39,6 @@ func (c *FakePlatformV1alpha1) ResourceGroups(namespace string) v1alpha1.Resourc
 	return &FakeResourceGroups{c, namespace}
 }
 
-func (c *FakePlatformV1alpha1) SlashCommands(namespace string) v1alpha1.SlashCommandInterface {
-	return &FakeSlashCommands{c, namespace}
-}
-
 func (c *FakePlatformV1alpha1) StatefulSetResizes(namespace string) v1alpha1.StatefulSetResizeInterface {
 	return &FakeStatefulSetResizes{c, namespace}
 }

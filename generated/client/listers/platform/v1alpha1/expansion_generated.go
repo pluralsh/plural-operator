@@ -41,14 +41,6 @@ type ResourceGroupListerExpansion interface{}
 // ResourceGroupNamespaceLister.
 type ResourceGroupNamespaceListerExpansion interface{}
 
-// SlashCommandListerExpansion allows custom methods to be added to
-// SlashCommandLister.
-type SlashCommandListerExpansion interface{}
-
-// SlashCommandNamespaceListerExpansion allows custom methods to be added to
-// SlashCommandNamespaceLister.
-type SlashCommandNamespaceListerExpansion interface{}
-
 // StatefulSetResizeListerExpansion allows custom methods to be added to
 // StatefulSetResizeLister.
 type StatefulSetResizeListerExpansion interface{}
