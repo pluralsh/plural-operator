@@ -1,0 +1,6 @@
+apiVersion: v2
+name: plural-operator
+description: A Helm chart for deploying the v1 plural operator, which is primarily responsible for managing our oauth proxy injector admission controller.
+type: application
+version: 0.2.0
+appVersion: "0.6.0"

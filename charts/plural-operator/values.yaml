@@ -1,0 +1,10 @@
+replicaCount: 1
+
+plural:
+  enabled: true
+  image:
+    repository: docker.io/pluralsh/plural-operator
+    # This sets the pull policy for images.
+    pullPolicy: Always
+    # Overrides the image tag whose default is the chart appVersion.
+    tag: ""
